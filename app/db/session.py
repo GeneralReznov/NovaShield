@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Database Session Management
 Supports both PostgreSQL (production) and SQLite (development/demo)
 """
 
