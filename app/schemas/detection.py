@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Detection Schemas
 Pydantic models for detection request/response validation
 """
 
