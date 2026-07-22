@@ -24,7 +24,6 @@ from app.models.database import User, UserRole, Detection, DetectionType, Detect
 from app.core.config import settings
 from app.core.storage import storage_manager
 from app.core.auth import get_current_user
-from app.worker import detect_deepfake_task, detect_voice_task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
