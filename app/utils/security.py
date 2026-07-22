@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Security Utilities
 File validation, sanitization, encryption
 """
 
