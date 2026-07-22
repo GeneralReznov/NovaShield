@@ -1,5 +1,4 @@
 """
-KAVACH AI - Groq AI Integration
 Handles FIR drafting, complaint analysis, STT (Whisper), and TTS
 """
 
