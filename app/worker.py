@@ -12,16 +12,6 @@ from concurrent.futures import ThreadPoolExecutor
 celery_app = None
 _celery_available = False
 
-try:
-    from app.celery_app import celery_app as _celery_app
-    celery_app = _celery_app
-    _celery_available = True
-    logger.info("Celery loaded successfully.")
-except Exception as e:
-    logger.warning(f"Celery not available (Redis may not be configured): {e}. "
-                   "Running in BackgroundTasks-only mode.")
-
-
 def _run_coroutine_in_new_loop(coro):
     loop = asyncio.new_event_loop()
     try:
