@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Citizen Complaint API
 Features:
 - SQL database persistence
 - NLP-based complaint analysis & auto severity scoring
