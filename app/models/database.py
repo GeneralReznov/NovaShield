@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Database Models
 PostgreSQL with SQLAlchemy 2.0 (Free & Open Source)
 """
 
