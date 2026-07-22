@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Advanced Voice Anti-Spoofing Service
 Uses librosa for real spectral feature analysis.
 Designed to be replaced with AASIST model when pretrained weights are available.
 """
