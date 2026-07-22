@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Detection Endpoints
 Asynchronous background AI processing with timeout protection and cleanup
 """
 
