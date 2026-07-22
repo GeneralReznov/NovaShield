@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}NovaShield{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="logo-icon">🛡️</div>
+    <span>Nova<span class="gradient-text">Shield</span></span>
+  </a>
+  <div class="navbar-nav">
+    <a href="/complaint" class="navbar-link">Report Crime</a>
+    <a href="/track" class="navbar-link">Track Case</a>
+    <a href="/analytics" class="navbar-link">Analytics</a>
+    <a href="/fir" class="navbar-link">FIR Draft</a>
+    <a href="/login" class="btn btn-ghost btn-sm">Sign In</a>
+    <a href="/register" class="btn btn-primary btn-sm">Get Access →</a>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<script src="/static/js/api.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

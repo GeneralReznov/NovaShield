@@ -1,0 +1,177 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Scan History — NovaShield{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block content %}
+<div class="page-header flex justify-between items-center">
+  <div>
+    <h1 class="page-title">📋 Scan History</h1>
+    <p class="page-subtitle">All past detection results and analysis logs</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <input class="form-input" type="text" id="searchInput" placeholder="🔍 Search scans..." style="width:200px" oninput="filterHistory()">
+    <select class="form-select" id="typeFilter" onchange="filterHistory()" style="width:150px">
+      <option value="">All Types</option>
+      <option value="deepfake">Deepfake</option>
+      <option value="voice">Voice</option>
+      <option value="phishing">Phishing</option>
+    </select>
+    <select class="form-select" id="resultFilter" onchange="filterHistory()" style="width:140px">
+      <option value="">All Results</option>
+      <option value="true">Threats Only</option>
+      <option value="false">Authentic Only</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>File / URL</th>
+          <th>Result</th>
+          <th>Confidence</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:13px;color:var(--text-muted)" id="historyCount">Loading...</span>
+    <div style="display:flex;gap:6px" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 style="font-size:18px;font-weight:700">Detection Detail</h2>
+      <button onclick="document.getElementById('detailModal').classList.add('hidden')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted)">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('detailModal').classList.add('hidden')">Close</button>
+      <button class="btn btn-primary" id="speakDetailBtn" onclick="speakDetail()">🔊 Read Result</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allItems = [];
+let voiceOut = new VoiceOutput();
+let currentDetail = null;
+
+(async () => {
+  await requireAuth();
+  await loadHistory();
+})();
+
+async function loadHistory() {
+  try {
+    const data = await api.get('/api/v1/history?per_page=100');
+    allItems = data.items || [];
+    renderTable(allItems);
+  } catch (err) {
+    document.getElementById('historyBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Failed to load history: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+function filterHistory() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const type = document.getElementById('typeFilter').value;
+  const result = document.getElementById('resultFilter').value;
+  const filtered = allItems.filter(item => {
+    const matchQ = !q || (item.original_filename||item.url||'').toLowerCase().includes(q) || (item.detection_type||item.type||'').includes(q);
+    const matchType = !type || (item.detection_type||item.type) === type;
+    const matchResult = !result || String(item.is_fake) === result;
+    return matchQ && matchType && matchResult;
+  });
+  renderTable(filtered);
+}
+
+function renderTable(items) {
+  const typeIcons = { deepfake:'🎭', voice:'🎤', phishing:'🔗' };
+  const typeColors = { deepfake:'badge-red', voice:'badge-purple', phishing:'badge-cyan' };
+  const tbody = document.getElementById('historyBody');
+  document.getElementById('historyCount').textContent = `${items.length} record${items.length!==1?'s':''}`;
+
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No scans found</div><p style="font-size:13px;margin-top:4px;color:var(--text-muted)">Try a different filter or run a new scan</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = items.map(item => {
+    const isFake = item.is_fake;
+    const conf = Math.round((item.confidence || 0) * 100);
+    const type = item.detection_type || item.type || 'unknown';
+    const icon = typeIcons[type] || '🔍';
+    const badgeClass = typeColors[type] || 'badge-cyan';
+    const name = escapeHtml((item.original_filename || item.filename || item.url || item.input_data || '—').substring(0, 60));
+    return `<tr>
+      <td><span class="badge ${badgeClass}">${icon} ${capitalize(type)}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-family:var(--font-mono);color:var(--text-secondary)" title="${name}">${name}</td>
+      <td><span class="badge ${isFake?'badge-red':'badge-green'}">${isFake?'⚠️ FAKE':'✅ REAL'}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar" style="width:70px;height:5px"><div class="progress-fill ${isFake?'danger':'safe'}" style="width:${conf}%"></div></div>
+          <span style="font-size:12px;color:var(--text-secondary);font-weight:600">${conf}%</span>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${formatDate(item.created_at)}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="action-btn" onclick='showDetail(${JSON.stringify(item).replace(/'/g,"&#39;")})'>View</button>
+          ${item.id ? `<a href="/api/v1/detections/${item.id}/report" target="_blank" class="action-btn">Report</a>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function showDetail(item) {
+  currentDetail = item;
+  const isFake = item.is_fake;
+  const conf = Math.round((item.confidence || 0) * 100);
+  const type = item.detection_type || item.type || 'unknown';
+  document.getElementById('detailBody').innerHTML = `
+    <div class="risk-indicator ${isFake?'danger':'safe'}" style="margin-bottom:18px">
+      <div class="risk-dot ${isFake?'danger':'safe'}"></div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:16px">${isFake?'⚠️ THREAT DETECTED':'✅ AUTHENTIC'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${capitalize(type)} analysis</div>
+      </div>
+      <span class="badge ${isFake?'badge-red':'badge-green'}" style="font-size:13px;padding:5px 12px">${conf}%</span>
+    </div>
+    ${item.explanation ? `<div style="padding:12px 14px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:9px;font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:14px">💡 ${escapeHtml(item.explanation)}</div>` : ''}
+    ${item.threats && item.threats.length ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Threat Indicators</div>${item.threats.map(t=>`<div style="font-size:12px;padding:6px 10px;color:var(--text-secondary);background:rgba(255,51,102,0.04);border-radius:6px;margin-bottom:4px;border-left:2px solid var(--red)">• ${escapeHtml(t)}</div>`).join('')}</div>` : ''}
+    <div style="font-size:11px;color:var(--text-muted);padding:10px 12px;background:rgba(255,255,255,0.02);border-radius:7px;font-family:var(--font-mono)">
+      ID: <span style="color:var(--cyan)">${escapeHtml(item.id||'—')}</span> · ${formatDate(item.created_at)}
+    </div>
+  `;
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+
+function speakDetail() {
+  if (!currentDetail) return;
+  const isFake = currentDetail.is_fake;
+  const conf = Math.round((currentDetail.confidence || 0) * 100);
+  const type = currentDetail.detection_type || currentDetail.type || 'content';
+  const text = isFake
+    ? `Warning. Threat detected in ${type} analysis. Confidence ${conf} percent. ${currentDetail.explanation ? currentDetail.explanation.substring(0,150) : ''}`
+    : `Scan complete. ${capitalize(type)} verified as authentic. Confidence ${conf} percent.`;
+  voiceOut.speak(text,
+    () => document.getElementById('speakDetailBtn').textContent = '🔊 Speaking...',
+    () => document.getElementById('speakDetailBtn').textContent = '🔊 Read Result'
+  );
+}
+</script>
+{% endblock %}

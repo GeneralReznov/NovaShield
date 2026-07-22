@@ -1,0 +1,190 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Command Center — NovaShield{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header flex justify-between items-center">
+  <div>
+    <h1 class="page-title">🏠 Command Center</h1>
+    <p class="page-subtitle">Real-time threat intelligence & platform metrics</p>
+  </div>
+  <div class="page-actions">
+    <a href="/dashboard/detect" class="btn btn-primary">⚡ New Scan</a>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid mb-6">
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--cyan),var(--purple))">
+    <div class="stat-icon" style="background:rgba(0,212,255,0.08)">🔍</div>
+    <div class="stat-label">Total Scans</div>
+    <div class="stat-value gradient-text" id="stat-scans">—</div>
+    <div class="stat-change up" id="stat-scans-change">Loading...</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--red),var(--orange))">
+    <div class="stat-icon" style="background:rgba(255,51,102,0.08)">⚠️</div>
+    <div class="stat-label">Threats Detected</div>
+    <div class="stat-value text-red" id="stat-threats">—</div>
+    <div class="stat-change" id="stat-threat-rate">—</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--green),var(--cyan))">
+    <div class="stat-icon" style="background:rgba(0,255,136,0.08)">✅</div>
+    <div class="stat-label">Verified Authentic</div>
+    <div class="stat-value text-green" id="stat-legit">—</div>
+    <div class="stat-change up">Confirmed safe</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--purple),var(--cyan))">
+    <div class="stat-icon" style="background:rgba(124,58,237,0.08)">🎯</div>
+    <div class="stat-label">Success Rate</div>
+    <div class="stat-value" style="color:var(--purple)" id="stat-rate">—</div>
+    <div class="stat-change up">Analysis accuracy</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2 mb-6">
+  <div class="card p-6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h3 style="font-size:15px;font-weight:700">Detection Trend</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:2px">Last 7 days</p>
+      </div>
+      <span class="badge badge-cyan">● Live</span>
+    </div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+  <div class="card p-6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h3 style="font-size:15px;font-weight:700">Threat Distribution</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:2px">By category</p>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:200px;display:flex;align-items:center;justify-content:center">
+      <canvas id="pieChart" style="max-width:200px;max-height:200px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Threats + Quick Actions -->
+<div class="grid-2">
+  <div class="card p-6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:15px;font-weight:700">Recent Activity</h3>
+      <a href="/dashboard/history" style="font-size:12px;color:var(--cyan);text-decoration:none;font-weight:600">View all →</a>
+    </div>
+    <div id="threatFeed" style="display:flex;flex-direction:column;gap:8px">
+      <div class="empty-state" style="padding:30px 0">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-6">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Quick Actions</h3>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <a href="/dashboard/detect" class="card" style="padding:14px;display:flex;align-items:center;gap:12px;text-decoration:none;transition:all 0.2s">
+        <div style="width:42px;height:42px;border-radius:10px;background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎭</div>
+        <div><div style="font-weight:600;font-size:14px">Deepfake Detection</div><div style="font-size:12px;color:var(--text-muted)">Analyze video/image for manipulation</div></div>
+        <svg width="16" height="16" style="margin-left:auto;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a href="/dashboard/detect" class="card" style="padding:14px;display:flex;align-items:center;gap:12px;text-decoration:none;transition:all 0.2s">
+        <div style="width:42px;height:42px;border-radius:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎤</div>
+        <div><div style="font-weight:600;font-size:14px">Voice Spoofing Check</div><div style="font-size:12px;color:var(--text-muted)">Detect synthetic or replayed audio</div></div>
+        <svg width="16" height="16" style="margin-left:auto;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a href="/dashboard/detect" class="card" style="padding:14px;display:flex;align-items:center;gap:12px;text-decoration:none;transition:all 0.2s">
+        <div style="width:42px;height:42px;border-radius:10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔗</div>
+        <div><div style="font-weight:600;font-size:14px">Phishing URL Scanner</div><div style="font-size:12px;color:var(--text-muted)">Check URLs for threats instantly</div></div>
+        <svg width="16" height="16" style="margin-left:auto;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a href="/fir" class="card" style="padding:14px;display:flex;align-items:center;gap:12px;text-decoration:none;transition:all 0.2s">
+        <div style="width:42px;height:42px;border-radius:10px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📄</div>
+        <div><div style="font-weight:600;font-size:14px">AI FIR Auto-Draft</div><div style="font-size:12px;color:var(--text-muted)">Generate legal FIR with Groq AI</div></div>
+        <svg width="16" height="16" style="margin-left:auto;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => {
+  await requireAuth();
+
+  // Load stats
+  try {
+    const stats = await api.get('/api/v1/stats');
+    document.getElementById('stat-scans').textContent = (stats.total_scans || 0).toLocaleString();
+    document.getElementById('stat-threats').textContent = (stats.threats || 0).toLocaleString();
+    document.getElementById('stat-legit').textContent = (stats.safe || 0).toLocaleString();
+    document.getElementById('stat-rate').textContent = (stats.success_rate || 0) + '%';
+    const rate = stats.total_scans ? Math.round(((stats.threats||0) / stats.total_scans) * 100) : 0;
+    const rateEl = document.getElementById('stat-threat-rate');
+    rateEl.textContent = `${rate}% threat rate`;
+    rateEl.className = 'stat-change ' + (rate > 30 ? 'down' : 'up');
+    document.getElementById('stat-scans-change').textContent = `${stats.total_scans||0} total analyses`;
+    document.getElementById('stat-scans-change').className = 'stat-change up';
+  } catch (e) {
+    console.warn('Stats load failed:', e);
+  }
+
+  // Load recent history for threat feed
+  try {
+    const hist = await api.get('/api/v1/history?per_page=5');
+    const items = hist.items || [];
+    const feed = document.getElementById('threatFeed');
+    if (!items.length) {
+      feed.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-state-icon" style="font-size:36px">🔍</div><div class="empty-state-title" style="font-size:15px">No scans yet</div><p style="font-size:13px;margin-top:4px;color:var(--text-muted)">Start your first analysis above</p></div>';
+    } else {
+      const typeIcons = { deepfake:'🎭', voice:'🎤', phishing:'🔗' };
+      feed.innerHTML = items.map(item => {
+        const isFake = item.is_fake;
+        const type = item.detection_type || item.type || 'unknown';
+        const icon = typeIcons[type] || '🔍';
+        const conf = Math.round((item.confidence || 0) * 100);
+        return `<div class="threat-item">
+          <div class="threat-type-dot" style="background:${isFake ? 'var(--red)' : 'var(--green)'};box-shadow:0 0 6px ${isFake ? 'var(--red)' : 'var(--green)'}"></div>
+          <span style="font-size:18px">${icon}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${capitalize(type)} Scan</div>
+            <div style="font-size:11px;color:var(--text-muted)">${formatDate(item.created_at)}</div>
+          </div>
+          <span class="badge ${isFake ? 'badge-red' : 'badge-green'}">${isFake ? 'FAKE' : 'REAL'} ${conf}%</span>
+        </div>`;
+      }).join('');
+    }
+  } catch {}
+
+  // Chart colors
+  const CG = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'rgba(232,244,253,0.5)', font: { size: 11 } } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,253,0.4)', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,253,0.4)', font: { size: 11 } } } } };
+  const days = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toLocaleDateString('en',{weekday:'short'});});
+
+  // Trend Chart
+  new Chart(document.getElementById('trendChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [
+        { label: 'Total', data: [12,19,15,23,18,27,22], borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,0.08)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#00d4ff', borderWidth:2 },
+        { label: 'Threats', data: [4,7,5,9,6,11,8], borderColor:'#ff3366', backgroundColor:'rgba(255,51,102,0.08)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#ff3366', borderWidth:2 }
+      ]
+    },
+    options: { ...CG, plugins: { ...CG.plugins, tooltip: { backgroundColor:'rgba(8,8,20,0.95)', borderColor:'rgba(0,212,255,0.3)', borderWidth:1, titleColor:'#e8f4fd', bodyColor:'rgba(232,244,253,0.7)' } } }
+  });
+
+  // Pie Chart
+  new Chart(document.getElementById('pieChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Deepfake', 'Voice', 'Phishing'],
+      datasets: [{ data:[35,25,40], backgroundColor:['rgba(255,51,102,0.75)','rgba(124,58,237,0.75)','rgba(0,212,255,0.75)'], borderColor:'#06060f', borderWidth:3, hoverBorderColor:['#ff3366','#7c3aed','#00d4ff'] }]
+    },
+    options: { responsive:true, maintainAspectRatio:true, plugins:{ legend:{ position:'bottom', labels:{ color:'rgba(232,244,253,0.5)', font:{size:11}, padding:12, usePointStyle:true } }, tooltip:{ backgroundColor:'rgba(8,8,20,0.95)', borderColor:'rgba(0,212,255,0.3)', borderWidth:1 } }, cutout:'65%' }
+  });
+})();
+</script>
+{% endblock %}

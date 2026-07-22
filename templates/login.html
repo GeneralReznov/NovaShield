@@ -1,0 +1,88 @@
+{% extends "base_public.html" %}
+{% block title %}Sign In — NovaShield{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="card auth-card" style="border-color:rgba(0,212,255,0.2)">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#0088cc,var(--cyan) 50%,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 18px;box-shadow:var(--glow-cyan)">🛡️</div>
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to NovaShield</p>
+    </div>
+
+    <!-- Credentials hint -->
+    <div style="padding:10px 14px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:20px">
+      Default admin: <code style="color:var(--cyan);font-size:12px">admin@novashield.ai</code> / <code style="color:var(--cyan);font-size:12px">Admin@123</code>
+    </div>
+
+    <form class="auth-form" id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="email" placeholder="admin@novashield.ai" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right:48px">
+          <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1" id="eyeBtn" title="Show/hide password">👁️</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" id="loginBtn" style="justify-content:center;margin-top:6px">
+        Sign In to Dashboard
+      </button>
+    </form>
+
+    <div class="auth-footer mt-4">
+      Don't have an account? <a href="/register">Create one →</a>
+    </div>
+
+    <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Sign in to access all features</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <a href="/register" class="btn btn-ghost btn-sm">✨ Create Account</a>
+        <a href="/" class="btn btn-ghost btn-sm">🏠 Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let showingPwd = false;
+function togglePwd() {
+  showingPwd = !showingPwd;
+  const p = document.getElementById('password');
+  p.type = showingPwd ? 'text' : 'password';
+  document.getElementById('eyeBtn').textContent = showingPwd ? '🙈' : '👁️';
+}
+
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Authenticating...';
+  try {
+    await api.post('/api/v1/auth/login', {
+      email: document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+    });
+    showToast('Login successful! Redirecting...', 'success');
+    setTimeout(() => window.location.href = '/dashboard', 700);
+  } catch (err) {
+    showToast(err.message || 'Invalid credentials', 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Sign In to Dashboard';
+  }
+});
+
+// Auto-fill from URL params if present (for demo)
+const p = new URLSearchParams(location.search);
+if (p.get('demo')) {
+  document.getElementById('email').value = 'admin@novashield.ai';
+  document.getElementById('password').value = 'Admin@123';
+}
+</script>
+{% endblock %}

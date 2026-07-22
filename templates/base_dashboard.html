@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Dashboard — NovaShield{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block head %}{% endblock %}
+<style>
+.sidebar-toggle-btn {
+  display: none; align-items: center; justify-content: center;
+  width: 36px; height: 36px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer; font-size: 16px; color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.sidebar-toggle-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+@media (max-width: 768px) { .sidebar-toggle-btn { display: flex; } }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle menu">☰</button>
+  <a href="/" class="navbar-brand">
+    <div class="logo-icon">🛡️</div>
+    <span>Nova<span class="gradient-text">Shield</span></span>
+  </a>
+
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <!-- Live status -->
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:20px;font-size:11px;font-weight:700;color:var(--green)">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulseDot 1.5s ease-in-out infinite"></div>
+      LIVE
+    </div>
+    <div class="notif-dot" title="System active"></div>
+    <!-- User menu -->
+    <div class="navbar-user" onclick="toggleUserMenu()">
+      <div class="user-avatar">A</div>
+      <span class="user-name text-sm" style="color:var(--text-secondary)">User</span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="color:var(--text-muted)"><path d="M2 3l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <!-- Dropdown -->
+    <div id="userMenu" class="hidden" style="position:absolute;top:72px;right:20px;background:rgba(8,8,20,0.97);border:1px solid var(--border);border-radius:12px;padding:8px;z-index:200;min-width:180px;box-shadow:0 12px 48px rgba(0,0,0,0.6),0 0 20px rgba(0,212,255,0.05)">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);margin-bottom:6px">
+        <div style="font-size:11px;color:var(--text-muted)">Signed in as</div>
+        <div class="user-name" style="font-size:13px;font-weight:600;color:var(--cyan);margin-top:2px">User</div>
+      </div>
+      <a href="/dashboard" class="sidebar-item" style="font-size:13px;border-radius:7px">🏠 Dashboard</a>
+      <a href="/complaint" class="sidebar-item" style="font-size:13px;border-radius:7px">📝 Report Crime</a>
+      <a href="/fir" class="sidebar-item" style="font-size:13px;border-radius:7px">📄 FIR Draft</a>
+      <div style="height:1px;background:var(--border);margin:6px 0"></div>
+      <button class="sidebar-item" style="font-size:13px;color:var(--red);border-radius:7px" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Sidebar overlay for mobile -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:49;backdrop-filter:blur(4px)"></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <!-- User quick info -->
+    <div style="padding:12px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.1);border-radius:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="user-avatar" style="flex-shrink:0">A</div>
+        <div>
+          <div class="user-name" style="font-size:13px;font-weight:700">User</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:1px">NovaShield Member</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-label">Core Platform</div>
+    <a href="/dashboard" class="sidebar-item {% block nav_dashboard %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Command Center
+    </a>
+    <a href="/dashboard/detect" class="sidebar-item {% block nav_detect %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      Threat Detection
+    </a>
+    <a href="/dashboard/history" class="sidebar-item {% block nav_history %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Scan History
+    </a>
+    <a href="/analytics" class="sidebar-item {% block nav_analytics %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </a>
+
+    <div class="sidebar-label">Citizen Services</div>
+    <a href="/complaint" class="sidebar-item {% block nav_complaint %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Complaint Portal
+    </a>
+    <a href="/fir" class="sidebar-item {% block nav_fir %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      FIR Auto-Draft
+    </a>
+    <a href="/track" class="sidebar-item {% block nav_track %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Track My Case
+    </a>
+
+    <div class="sidebar-label">Administration</div>
+    <a href="/dashboard/admin" class="sidebar-item admin-only hidden {% block nav_admin %}{% endblock %}">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Admin Panel
+    </a>
+
+    <div class="sidebar-footer">
+      <div style="text-align:center;font-size:11px;color:var(--text-muted)">
+        <div style="color:var(--green);font-weight:700;margin-bottom:4px;font-size:10px">● SYSTEM OPERATIONAL</div>
+        NovaShield v3.0<br>
+        <span style="color:rgba(232,244,253,0.2)">© 2026 Digital India</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+// Toggle user dropdown
+function toggleUserMenu() {
+  document.getElementById('userMenu').classList.toggle('hidden');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.navbar-user') && !e.target.closest('#userMenu')) {
+    document.getElementById('userMenu')?.classList.add('hidden');
+  }
+});
+
+// Mobile sidebar toggle
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('sidebarOverlay');
+  const open = s.classList.toggle('open');
+  o.style.display = open ? 'block' : 'none';
+  if (open) {
+    s.style.transform = 'none';
+    s.style.width = '264px';
+    s.style.zIndex = '99';
+  } else {
+    s.style.transform = 'translateX(-264px)';
+    o.style.display = 'none';
+  }
+}
+
+// Populate user nav on load
+populateUserNav();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,162 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Track Your Case — NovaShield{% endblock %}
+{% block nav_track %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📍 Track Your Case</h1>
+  <p class="page-subtitle">Enter your complaint tracking ID to view case status and timeline</p>
+</div>
+
+<div style="max-width:720px">
+
+  <div class="card p-6" style="margin-bottom:20px">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="position:relative;flex:1">
+        <input class="form-input" type="text" id="trackInput" placeholder="CC-DRAFT-xxxxxxxx-xxxx-xxxx..." style="font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px">
+      </div>
+      <button class="voice-btn" id="trackVoiceBtn" onclick="toggleTrackVoice()" title="Speak tracking ID" style="flex-shrink:0">🎤</button>
+      <button class="btn btn-primary" onclick="trackCase()" id="trackBtn" style="flex-shrink:0">🔍 Track</button>
+    </div>
+    <div id="voiceStatus" style="font-size:11px;color:var(--text-muted);margin-top:6px"></div>
+
+    <div style="margin-top:16px;padding:12px 14px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:9px;font-size:13px;color:var(--text-secondary)">
+      💡 Your tracking ID was provided when you submitted your complaint (format: <code style="color:var(--cyan);font-family:var(--font-mono);font-size:12px">CC-DRAFT-xxxx...</code>)
+    </div>
+  </div>
+
+  <div id="trackResult"></div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => { await requireAuth(); })();
+
+let trackVoiceIn = null;
+
+function toggleTrackVoice() {
+  if (!trackVoiceIn) {
+    trackVoiceIn = new VoiceInput(
+      text => {
+        document.getElementById('trackInput').value = text.replace(/\s/g, '');
+        document.getElementById('voiceStatus').textContent = '✅ Captured: ' + text;
+        trackCase();
+      },
+      state => {
+        const btn = document.getElementById('trackVoiceBtn');
+        if (state === 'recording') { btn.classList.add('recording'); btn.textContent = '⏹️'; document.getElementById('voiceStatus').textContent = '🎤 Listening...'; }
+        else if (state === 'processing') { btn.textContent = '⏳'; document.getElementById('voiceStatus').textContent = '⏳ Processing...'; }
+        else { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+      }
+    );
+  }
+  trackVoiceIn.toggle();
+}
+
+document.getElementById('trackInput').addEventListener('keydown', e => { if (e.key === 'Enter') trackCase(); });
+
+async function trackCase() {
+  const id = document.getElementById('trackInput').value.trim();
+  if (!id) { showToast('Please enter your tracking ID', 'warning'); return; }
+
+  const btn = document.getElementById('trackBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const res = document.getElementById('trackResult');
+  res.innerHTML = '';
+
+  try {
+    const data = await api.get(`/api/v1/complaints/track/${encodeURIComponent(id)}`);
+    const complaint = data.data || data;
+    renderTrackResult(complaint);
+  } catch (err) {
+    res.innerHTML = `<div class="card p-6" style="border-color:rgba(255,51,102,0.3);text-align:center">
+      <div style="font-size:48px;margin-bottom:14px">❌</div>
+      <h3 style="font-weight:700;margin-bottom:8px">Case Not Found</h3>
+      <p style="color:var(--text-secondary);font-size:14px">No complaint found with tracking ID:</p>
+      <code style="color:var(--cyan);font-family:var(--font-mono);font-size:13px;display:block;margin:8px 0">${escapeHtml(id)}</code>
+      <p style="color:var(--text-muted);font-size:12px;margin-top:8px">Double-check your tracking ID or <a href="/complaint" style="color:var(--cyan)">submit a new complaint</a>.</p>
+    </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Track';
+  }
+}
+
+function renderTrackResult(data) {
+  const res = document.getElementById('trackResult');
+  const statusColors = { pending:'var(--orange)', open:'var(--orange)', investigating:'var(--cyan)', resolved:'var(--green)', closed:'var(--text-muted)' };
+  const statusIcons = { pending:'⏳', open:'🔓', investigating:'🔍', resolved:'✅', closed:'🔒' };
+  const status = (data.status || 'pending').toLowerCase();
+  const priorityColors = { critical:'var(--red)', high:'var(--orange)', medium:'var(--cyan)', low:'var(--green)' };
+  const priority = (data.nlp_analysis?.auto_priority || data.urgency || 'medium').toLowerCase();
+
+  const timeline = data.timeline || [];
+  const timelineHtml = timeline.length
+    ? `<div class="timeline">${timeline.map(t => `
+        <div class="timeline-item">
+          <div style="font-size:13px;font-weight:600;color:${t.done !== false ? 'var(--text-primary)' : 'var(--text-muted)'}">${escapeHtml(t.event || t.action || 'Update')}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${t.date !== 'Pending' ? formatDate(t.date || t.timestamp) : '⏳ Pending'}</div>
+          ${t.note ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${escapeHtml(t.note)}</div>` : ''}
+        </div>`).join('')}</div>`
+    : `<div style="color:var(--text-muted);font-size:13px;padding:12px 0">No timeline events yet.</div>`;
+
+  const nlp = data.nlp_analysis || {};
+
+  res.innerHTML = `
+    <div class="card p-6" style="border-color:rgba(0,212,255,0.2)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Tracking ID</div>
+          <div style="font-size:16px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);word-break:break-all">${escapeHtml(data.tracking_id || '—')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:28px;margin-bottom:4px">${statusIcons[status] || '📋'}</div>
+          <div style="font-size:13px;font-weight:800;color:${statusColors[status]||'var(--cyan)'}">${status.toUpperCase()}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+        <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Priority</div>
+          <div style="font-weight:800;color:${priorityColors[priority]||'var(--cyan)'};font-size:15px">${priority.toUpperCase()}</div>
+        </div>
+        <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Type</div>
+          <div style="font-weight:700;font-size:13px">${escapeHtml(data.type || '—')}</div>
+        </div>
+        <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Filed</div>
+          <div style="font-weight:700;font-size:12px">${formatDate(data.submitted_at || data.created_at)}</div>
+        </div>
+      </div>
+
+      ${nlp.risk_flags?.length ? `<div style="margin-bottom:16px;display:flex;flex-direction:column;gap:5px">${nlp.risk_flags.map(f=>`<div style="font-size:12px;padding:7px 10px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.2);border-radius:6px;color:var(--orange)">${escapeHtml(f)}</div>`).join('')}</div>` : ''}
+
+      ${data.description ? `<div style="margin-bottom:18px;padding:14px;background:rgba(0,0,0,0.25);border-radius:9px;font-size:13px;color:var(--text-secondary);line-height:1.7;border:1px solid var(--border)">${escapeHtml(data.description)}</div>` : ''}
+
+      ${nlp.severity_score !== undefined ? `
+        <div style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Severity Score</span>
+            <span style="font-weight:800">${nlp.severity_score}/100</span>
+          </div>
+          <div class="progress-bar" style="height:8px"><div class="progress-fill ${nlp.severity_score>60?'danger':'safe'}" style="width:${Math.min(nlp.severity_score,100)}%"></div></div>
+        </div>` : ''}
+
+      <div style="margin-top:18px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Case Timeline</div>
+        ${timelineHtml}
+      </div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+        <a href="/fir" class="btn btn-secondary btn-sm">📄 Generate FIR</a>
+        <a href="/complaint" class="btn btn-ghost btn-sm">Submit New Complaint</a>
+      </div>
+    </div>
+  `;
+}
+</script>
+{% endblock %}

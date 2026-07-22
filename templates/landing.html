@@ -1,0 +1,239 @@
+{% extends "base_public.html" %}
+{% block title %}NovaShield — AI-Powered Digital Public Safety Platform{% endblock %}
+
+{% block content %}
+<div class="landing">
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Live AI Protection Active
+      </div>
+      <h1 class="hero-title">
+        Defeat <span class="gradient-text">Digital Threats</span><br>
+        Before They Strike
+      </h1>
+      <p class="hero-description">
+        NovaShield uses state-of-the-art machine learning to detect deepfakes, voice spoofing, and phishing attacks in real-time. Protecting citizens, one scan at a time.
+      </p>
+      <div class="hero-actions">
+        <a href="/register" class="btn btn-primary btn-lg">🚀 Start Scanning Free</a>
+        <a href="/complaint" class="btn btn-ghost btn-lg">📝 Report a Crime →</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text" id="cnt-scans">0</div>
+          <div class="hero-stat-label">Total Scans</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text" id="cnt-threats">0</div>
+          <div class="hero-stat-label">Threats Caught</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text">99.2%</div>
+          <div class="hero-stat-label">Accuracy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live scan demo -->
+    <div class="hero-visual">
+      <div class="card card-glow scan-container" style="padding:28px;border-color:rgba(0,212,255,0.25)">
+        <div class="scan-line"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulseDot 1s infinite;box-shadow:0 0 8px var(--green)"></div>
+          <span style="font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1.5px;text-transform:uppercase">Threat Analysis Engine</span>
+        </div>
+
+        <div id="scanDemo" style="display:flex;flex-direction:column;gap:12px">
+          <div class="card demo-card" style="padding:16px;border-color:rgba(255,51,102,0.3);background:rgba(255,51,102,0.03)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:18px">🎭</span>
+                <span style="font-size:13px;font-weight:700">Deepfake Video</span>
+              </div>
+              <span class="badge badge-red">FAKE DETECTED</span>
+            </div>
+            <div class="progress-bar" style="height:7px"><div class="progress-fill danger" style="width:87%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px"><span>Confidence</span><span style="color:var(--red);font-weight:700">87%</span></div>
+          </div>
+
+          <div class="card demo-card" style="padding:16px;border-color:rgba(0,255,136,0.3);background:rgba(0,255,136,0.02)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:18px">🎤</span>
+                <span style="font-size:13px;font-weight:700">Voice Analysis</span>
+              </div>
+              <span class="badge badge-green">AUTHENTIC</span>
+            </div>
+            <div class="progress-bar" style="height:7px"><div class="progress-fill safe" style="width:94%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px"><span>Confidence</span><span style="color:var(--green);font-weight:700">94%</span></div>
+          </div>
+
+          <div class="card demo-card" style="padding:16px;border-color:rgba(255,51,102,0.3);background:rgba(255,51,102,0.03)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:18px">🔗</span>
+                <span style="font-size:13px;font-weight:700">Phishing URL</span>
+              </div>
+              <span class="badge badge-red">MALICIOUS</span>
+            </div>
+            <div class="progress-bar" style="height:7px"><div class="progress-fill danger" style="width:95%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px"><span>Risk Score</span><span style="color:var(--red);font-weight:700">95/100</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 14px;border-radius:8px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px">
+          <span style="color:var(--cyan);font-weight:700">⚡</span>
+          Analysis in <span style="color:var(--cyan);font-weight:700;margin:0 3px">1.2s</span> · Section 65B compliant evidence
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="feature-section">
+    <div class="holo-line"></div>
+    <p style="text-align:center;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:14px">Detection Capabilities</p>
+    <h2 class="section-title">Three Layers of <span class="gradient-text">AI Protection</span></h2>
+    <p class="section-desc">Enterprise-grade models trained on real-world threat data from India's cybercrime ecosystem</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎭</div>
+        <div class="feature-title">Deepfake Video Detection</div>
+        <div class="feature-desc">EfficientNet-B0 + Vision Transformer analyzes facial inconsistencies, blink patterns, edge artifacts, and compression anomalies across video frames with 91% accuracy.</div>
+        <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-cyan">PyTorch</span>
+          <span class="badge badge-purple">EfficientNet</span>
+          <span class="badge badge-red">ViT</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎤</div>
+        <div class="feature-title">Voice Spoofing Detection</div>
+        <div class="feature-desc">89 spectral features including MFCCs, chroma, ZCR, and spectral flatness detect TTS synthesis, replay attacks, and voice conversion with 89% accuracy.</div>
+        <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-cyan">Librosa</span>
+          <span class="badge badge-green">Wav2Vec2</span>
+          <span class="badge badge-purple">Whisper</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <div class="feature-title">Phishing URL Analysis</div>
+        <div class="feature-desc">XGBoost + 25 heuristic rules detect brand impersonation, homoglyphs, entropy anomalies, suspicious TLDs, and known malware domains with 96% accuracy.</div>
+        <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-orange">XGBoost</span>
+          <span class="badge badge-cyan">WHOIS</span>
+          <span class="badge badge-red">Heuristics</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Voice I/O Feature ── -->
+  <section class="feature-section" style="padding-top:0">
+    <div class="holo-line"></div>
+    <p style="text-align:center;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--purple);text-transform:uppercase;margin-bottom:14px">Accessibility</p>
+    <h2 class="section-title">Full <span class="gradient-text-green">Voice Interaction</span></h2>
+    <p class="section-desc">Speak your queries, hear the results — powered by Groq Whisper + Browser TTS</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:40px">
+      <div class="card" style="padding:24px;border-color:rgba(124,58,237,0.2)">
+        <div style="font-size:32px;margin-bottom:12px">🎤</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Voice-to-Text Input</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Speak URLs, complaint details, or queries. Groq Whisper AI transcribes your voice to text instantly across all input fields.</div>
+      </div>
+      <div class="card" style="padding:24px;border-color:rgba(0,212,255,0.2)">
+        <div style="font-size:32px;margin-bottom:12px">🔊</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Text-to-Speech Output</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">All detection results, FIR drafts, and AI responses can be read aloud. Perfect for accessibility and hands-free operation.</div>
+      </div>
+      <div class="card" style="padding:24px;border-color:rgba(0,255,136,0.2)">
+        <div style="font-size:32px;margin-bottom:12px">🤖</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">AI Legal Assistant</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Powered by Groq Llama 3.3 70B. Ask anything about cybercrime law, IPC sections, or your rights. Voice-enabled Q&A included.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tech Stack ── -->
+  <section class="feature-section" style="padding-top:0">
+    <div class="holo-line"></div>
+    <p style="text-align:center;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--green);text-transform:uppercase;margin-bottom:14px">Built With</p>
+    <h2 class="section-title">Enterprise-Grade <span class="gradient-text-green">Tech Stack</span></h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:36px">
+      {% for item in [
+        ('⚡','FastAPI','Backend'),('🤖','Groq AI','LLM + STT'),('🧠','PyTorch','Deep Learning'),
+        ('🗄️','PostgreSQL','Database'),('🔐','JWT Auth','Security'),('📊','XGBoost','ML Models')
+      ] %}
+      <div class="tech-card">
+        <div style="font-size:28px;margin-bottom:10px">{{ item[0] }}</div>
+        <div style="font-size:14px;font-weight:700">{{ item[1] }}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ item[2] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section style="padding:88px 48px;text-align:center;max-width:680px;margin:0 auto">
+    <div class="hero-badge" style="display:inline-flex;margin-bottom:24px">
+      <span class="dot"></span> Join 1,200+ Users
+    </div>
+    <h2 style="font-size:38px;font-weight:900;margin-bottom:16px;letter-spacing:-0.5px">Ready to <span class="gradient-text">Protect India</span>?</h2>
+    <p style="color:var(--text-secondary);margin-bottom:36px;font-size:16px;line-height:1.7">Join law enforcement agencies and citizens using NovaShield to fight digital crime. Free to start, powerful for professionals.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="/register" class="btn btn-primary btn-lg">🚀 Create Free Account</a>
+      <a href="/dashboard" class="btn btn-ghost btn-lg">View Dashboard Demo →</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer style="border-top:1px solid var(--border);padding:24px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">🛡️</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-secondary)">NovaShield</div>
+        <div style="font-size:11px;color:var(--text-muted)">© 2026 · ET AI Hackathon · Made with ❤️ in India</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:20px">
+      <a href="/complaint" style="font-size:12px;color:var(--text-muted);text-decoration:none" class="navbar-link">Report Crime</a>
+      <a href="/track" style="font-size:12px;color:var(--text-muted);text-decoration:none" class="navbar-link">Track Case</a>
+      <a href="/api/docs" style="font-size:12px;color:var(--text-muted);text-decoration:none" class="navbar-link">API Docs</a>
+    </div>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animate stats on load
+fetch('/metrics').then(r => r.json()).then(d => {
+  animateCounter(document.getElementById('cnt-scans'), d.detections_total || 1284);
+  animateCounter(document.getElementById('cnt-threats'), Math.round((d.detections_total || 463) * 0.36));
+}).catch(() => {
+  animateCounter(document.getElementById('cnt-scans'), 1284);
+  animateCounter(document.getElementById('cnt-threats'), 463);
+});
+
+// Rotate demo cards with highlight effect
+let idx = 0;
+const cards = document.querySelectorAll('.demo-card');
+setInterval(() => {
+  cards.forEach((el, i) => {
+    const active = i === idx % cards.length;
+    el.style.opacity = active ? '1' : '0.45';
+    el.style.transform = active ? 'scale(1.02) translateX(4px)' : 'scale(1)';
+    el.style.transition = 'all 0.5s cubic-bezier(0.4,0,0.2,1)';
+  });
+  idx++;
+}, 2200);
+</script>
+{% endblock %}

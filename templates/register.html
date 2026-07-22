@@ -1,0 +1,94 @@
+{% extends "base_public.html" %}
+{% block title %}Create Account — NovaShield{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="card auth-card" style="border-color:rgba(124,58,237,0.2);max-width:480px">
+    <div class="auth-logo">
+      <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--purple),#a78bfa 50%,var(--cyan));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 18px;box-shadow:var(--glow-purple)">🔐</div>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join NovaShield — protect digital India</p>
+    </div>
+
+    <form class="auth-form" id="registerForm">
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group">
+          <label class="form-label">Username *</label>
+          <input class="form-input" type="text" id="username" placeholder="johndoe" required minlength="3" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" id="fullname" placeholder="John Doe" autocomplete="name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input class="form-input" type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="password" placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password" style="padding-right:48px">
+          <button type="button" onclick="togglePwd('password','eyeBtn1')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1" id="eyeBtn1">👁️</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password *</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="confirmPassword" placeholder="Repeat your password" required autocomplete="new-password" style="padding-right:48px">
+          <button type="button" onclick="togglePwd('confirmPassword','eyeBtn2')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1" id="eyeBtn2">👁️</button>
+        </div>
+      </div>
+
+      <div style="padding:10px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:8px;font-size:12px;color:var(--text-secondary)">
+        🔒 Protected with Argon2id password hashing and JWT authentication
+      </div>
+
+      <button type="submit" class="btn btn-purple w-full" id="regBtn" style="justify-content:center">
+        🚀 Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer mt-4">
+      Already have an account? <a href="/login">Sign in →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePwd(inputId, btnId) {
+  const p = document.getElementById(inputId);
+  const showing = p.type === 'text';
+  p.type = showing ? 'password' : 'text';
+  document.getElementById(btnId).textContent = showing ? '👁️' : '🙈';
+}
+
+document.getElementById('registerForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pwd = document.getElementById('password').value;
+  const cpwd = document.getElementById('confirmPassword').value;
+  if (pwd !== cpwd) { showToast('Passwords do not match', 'error'); return; }
+  if (pwd.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating account...';
+  try {
+    await api.post('/api/v1/auth/register', {
+      username: document.getElementById('username').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      password: pwd,
+      full_name: document.getElementById('fullname').value.trim() || undefined,
+    });
+    showToast('Account created successfully! Redirecting to login...', 'success');
+    setTimeout(() => window.location.href = '/login', 1200);
+  } catch (err) {
+    showToast(err.message || 'Registration failed', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Create Account';
+  }
+});
+</script>
+{% endblock %}

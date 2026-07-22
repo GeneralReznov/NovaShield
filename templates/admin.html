@@ -1,0 +1,228 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Admin Panel — NovaShield{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">⚙️ Admin Panel</h1>
+  <p class="page-subtitle">User management, audit logs, and system health monitoring</p>
+</div>
+
+<div class="tabs mb-6" id="adminTabs">
+  <button class="tab active" onclick="switchAdminTab('users',this)">👥 Users</button>
+  <button class="tab" onclick="switchAdminTab('audit',this)">📋 Audit Logs</button>
+  <button class="tab" onclick="switchAdminTab('system',this)">📊 System</button>
+</div>
+
+<!-- Users Tab -->
+<div id="atab-users">
+  <div class="card">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <h3 style="font-size:15px;font-weight:700">Registered Users</h3>
+      <input class="form-input" type="text" placeholder="🔍 Search users..." id="userSearch" style="width:220px;height:36px;padding:7px 12px" oninput="filterUsers()">
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Audit Logs Tab -->
+<div id="atab-audit" class="hidden">
+  <div class="card">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <h3 style="font-size:15px;font-weight:700">Security Audit Log</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:3px">All system events and user actions</p>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Action</th><th>Resource</th><th>User ID</th><th>IP Address</th><th>Timestamp</th></tr></thead>
+        <tbody id="auditBody"><tr><td colspan="5" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- System Tab -->
+<div id="atab-system" class="hidden">
+  <div class="stats-grid mb-6">
+    <div class="stat-card" style="--accent:linear-gradient(90deg,var(--cyan),var(--purple))"><div class="stat-label">Total Users</div><div class="stat-value text-cyan" id="sys-users">—</div></div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,var(--green),var(--cyan))"><div class="stat-label">Total Detections</div><div class="stat-value text-green" id="sys-detections">—</div></div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,var(--red),var(--orange))"><div class="stat-label">Threats Flagged</div><div class="stat-value text-red" id="sys-threats">—</div></div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,var(--purple),var(--cyan))"><div class="stat-label">API Status</div><div class="stat-value" style="font-size:20px">🟢 Online</div></div>
+  </div>
+
+  <div class="card p-6">
+    <h3 style="font-weight:700;margin-bottom:18px">System Health Monitor</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="padding:16px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);border-radius:10px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">FastAPI Backend</div>
+        <div style="font-weight:700;color:var(--green);font-size:15px">● Operational</div>
+      </div>
+      <div style="padding:16px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);border-radius:10px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">PostgreSQL</div>
+        <div style="font-weight:700;color:var(--green);font-size:15px" id="dbStatus">● Checking...</div>
+      </div>
+      <div style="padding:16px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:10px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Groq AI</div>
+        <div style="font-weight:700;color:var(--cyan);font-size:15px">● Connected</div>
+      </div>
+      <div style="padding:16px;border:1px solid var(--border);border-radius:10px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Redis Cache</div>
+        <div style="font-weight:700;color:var(--orange);font-size:15px">● Optional</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Role Change Modal -->
+<div id="roleModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2 style="font-size:16px;font-weight:700">Change User Role</h2>
+      <button onclick="document.getElementById('roleModal').classList.add('hidden')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted)">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">Updating role for: <strong id="roleUserName" style="color:var(--cyan)"></strong></p>
+      <div class="form-group">
+        <label class="form-label">New Role</label>
+        <select class="form-select" id="roleSelect">
+          <option value="user">User</option>
+          <option value="premium">Premium</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('roleModal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateRole()">Update Role</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allUsers = [];
+let currentUserId = null;
+
+(async () => {
+  const user = await requireAuth();
+  if (user && user.role !== 'admin') {
+    showToast('⛔ Admin access required', 'error');
+    setTimeout(() => window.location.href = '/dashboard', 1500);
+    return;
+  }
+  await loadAll();
+  checkDb();
+})();
+
+async function loadAll() {
+  await Promise.all([loadUsers(), loadAudit(), loadSysStats()]);
+}
+
+async function loadUsers() {
+  try {
+    const data = await api.get('/api/v1/admin/users');
+    allUsers = data.items || data.users || [];
+    renderUsers(allUsers);
+  } catch (e) {
+    document.getElementById('usersBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Failed to load users: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function loadAudit() {
+  try {
+    const data = await api.get('/api/v1/admin/audit-logs');
+    const logs = data.items || data.logs || [];
+    document.getElementById('auditBody').innerHTML = !logs.length
+      ? `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">No audit logs found</td></tr>`
+      : logs.map(l => `<tr>
+          <td><span class="badge badge-cyan" style="font-size:11px">${escapeHtml(l.action||'—')}</span></td>
+          <td style="font-size:12px;color:var(--text-secondary)">${escapeHtml(l.resource_type||'—')}</td>
+          <td style="font-size:12px;font-family:var(--font-mono);color:var(--text-muted)">${escapeHtml(String(l.user_id||'—').substring(0,16))}...</td>
+          <td style="font-size:12px;font-family:var(--font-mono);color:var(--text-muted)">${escapeHtml(l.ip_address||'—')}</td>
+          <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${formatDate(l.created_at)}</td>
+        </tr>`).join('');
+  } catch (e) {
+    document.getElementById('auditBody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">Failed to load audit logs</td></tr>`;
+  }
+}
+
+async function loadSysStats() {
+  try {
+    const data = await api.get('/api/v1/admin/stats');
+    document.getElementById('sys-users').textContent = (data.total_users || 0).toLocaleString();
+    document.getElementById('sys-detections').textContent = (data.total_detections || 0).toLocaleString();
+    document.getElementById('sys-threats').textContent = (data.total_threats || data.threats_detected || 0).toLocaleString();
+  } catch {}
+}
+
+async function checkDb() {
+  try {
+    const r = await api.get('/ready');
+    const el = document.getElementById('dbStatus');
+    if (r.status === 'ready') { el.textContent = '● Operational'; el.style.color = 'var(--green)'; }
+    else { el.textContent = '● Degraded'; el.style.color = 'var(--orange)'; }
+  } catch {
+    const el = document.getElementById('dbStatus');
+    el.textContent = '● Unreachable'; el.style.color = 'var(--red)';
+  }
+}
+
+function renderUsers(users) {
+  document.getElementById('usersBody').innerHTML = !users.length
+    ? `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No users found</td></tr>`
+    : users.map(u => `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0">${(u.username||u.email||'?')[0].toUpperCase()}</div>
+            <div>
+              <div style="font-size:13px;font-weight:700">${escapeHtml(u.username||'—')}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${escapeHtml(u.full_name||'')}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:13px;color:var(--text-secondary)">${escapeHtml(u.email||'—')}</td>
+        <td><span class="badge ${u.role==='admin'?'badge-red':u.role==='premium'?'badge-purple':'badge-cyan'}">${escapeHtml(u.role||'user')}</span></td>
+        <td><span class="badge ${u.is_active?'badge-green':'badge-orange'}">${u.is_active?'✅ Active':'⚠️ Inactive'}</span></td>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${formatDate(u.created_at)}</td>
+        <td><button class="action-btn" onclick='openRoleModal("${escapeHtml(String(u.id))}","${escapeHtml(u.username||u.email)}","${escapeHtml(u.role||'user')}")'>Change Role</button></td>
+      </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  renderUsers(allUsers.filter(u => (u.username||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q) || (u.full_name||'').toLowerCase().includes(q)));
+}
+
+function switchAdminTab(name, btn) {
+  ['users','audit','system'].forEach(t => document.getElementById('atab-'+t).classList.add('hidden'));
+  document.querySelectorAll('#adminTabs .tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('atab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+}
+
+function openRoleModal(id, name, currentRole) {
+  currentUserId = id;
+  document.getElementById('roleUserName').textContent = name;
+  document.getElementById('roleSelect').value = currentRole;
+  document.getElementById('roleModal').classList.remove('hidden');
+}
+
+async function updateRole() {
+  const role = document.getElementById('roleSelect').value;
+  try {
+    await api.put(`/api/v1/admin/users/${currentUserId}/role`, { role });
+    showToast('Role updated successfully', 'success');
+    document.getElementById('roleModal').classList.add('hidden');
+    await loadUsers();
+  } catch (err) {
+    showToast('Failed: ' + err.message, 'error');
+  }
+}
+</script>
+{% endblock %}

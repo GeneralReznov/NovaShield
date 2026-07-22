@@ -1,0 +1,222 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Report Cybercrime — NovaShield{% endblock %}
+{% block nav_complaint %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📝 Report a Cybercrime</h1>
+  <p class="page-subtitle">AI-powered complaint submission with automatic priority analysis and tracking</p>
+</div>
+
+<div style="max-width:820px">
+
+  <div style="padding:12px 16px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.25);border-radius:9px;font-size:13px;color:var(--orange);margin-bottom:24px">
+    ⚠️ <strong>Disclaimer:</strong> This is an AI-assisted preliminary complaint form for awareness. For an official FIR, visit your nearest police station or <a href="https://cybercrime.gov.in" target="_blank" style="color:var(--orange)">cybercrime.gov.in</a>
+  </div>
+
+  <!-- Complaint Form -->
+  <div class="card p-6" id="formSection">
+    <form id="complaintForm">
+      <!-- Complainant -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <div style="width:4px;height:22px;background:linear-gradient(180deg,var(--cyan),var(--purple));border-radius:2px"></div>
+        <h3 style="font-weight:700;color:var(--cyan)">Complainant Information</h3>
+      </div>
+
+      <div class="grid-2" style="gap:14px;margin-bottom:20px">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" type="text" id="c-name" placeholder="Your full name" required style="flex:1">
+            <button type="button" class="voice-btn" id="nameVoiceBtn" onclick="voiceFor('c-name','nameVoiceBtn')" title="Speak name" style="flex-shrink:0;width:44px;height:44px;font-size:18px">🎤</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <input class="form-input" type="tel" id="c-phone" placeholder="+91 9876543210" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" id="c-email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">City / District *</label>
+          <input class="form-input" type="text" id="c-city" placeholder="Mumbai, Maharashtra" required>
+        </div>
+      </div>
+
+      <div class="holo-line"></div>
+
+      <!-- Incident -->
+      <div style="display:flex;align-items:center;gap:10px;margin:20px 0 18px">
+        <div style="width:4px;height:22px;background:linear-gradient(180deg,var(--purple),var(--red));border-radius:2px"></div>
+        <h3 style="font-weight:700;color:#a78bfa">Incident Information</h3>
+      </div>
+
+      <div class="grid-2" style="gap:14px;margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Crime Category *</label>
+          <select class="form-select" id="c-type" required>
+            <option value="">Select type...</option>
+            <option value="deepfake">Deepfake / Morphed Content</option>
+            <option value="phishing">Phishing / Financial Fraud</option>
+            <option value="voice_spoofing">Voice Spoofing / Impersonation</option>
+            <option value="digital_arrest">Digital Arrest Scam</option>
+            <option value="identity_theft">Identity Theft</option>
+            <option value="cyberbullying">Cyberbullying / Harassment</option>
+            <option value="financial_fraud">Online Financial Fraud</option>
+            <option value="other">Other Cybercrime</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Financial Loss (if any)</label>
+          <input class="form-input" type="text" id="c-loss" placeholder="₹0 or enter amount">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Description of Incident *</label>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <textarea class="form-textarea" id="c-desc" placeholder="Describe what happened, when it occurred, how it was done, and any losses..." required style="min-height:130px;flex:1"></textarea>
+          <button type="button" class="voice-btn" id="descVoiceBtn" onclick="voiceFor('c-desc','descVoiceBtn')" title="Dictate description" style="flex-shrink:0;width:44px;height:44px;font-size:18px;margin-top:2px">🎤</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Click 🎤 to dictate via Groq Whisper AI voice-to-text</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:24px">
+        <label class="form-label">Evidence / Witness Details</label>
+        <textarea class="form-textarea" id="c-evidence" placeholder="Screenshots, URLs, witness names, transaction IDs, phone numbers of accused..." style="min-height:80px"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="justify-content:center;padding:13px">
+        🚀 Submit Complaint with AI Analysis
+      </button>
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">AI analyzes priority, risk flags, and recommended actions automatically</div>
+    </form>
+  </div>
+
+  <!-- Success State -->
+  <div id="successSection" class="hidden">
+    <div class="card p-6" style="border-color:rgba(0,255,136,0.3)">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:64px;margin-bottom:14px">✅</div>
+        <h2 style="font-size:24px;font-weight:900;color:var(--green);margin-bottom:6px">Complaint Submitted!</h2>
+        <p style="color:var(--text-secondary)">Save your tracking ID to check the status of your complaint</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px">
+        <div style="padding:18px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:10px;text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Tracking ID</div>
+          <div style="font-size:15px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);word-break:break-all" id="trackingId">—</div>
+        </div>
+        <div style="padding:18px;background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.2);border-radius:10px;text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">AI Priority</div>
+          <div style="font-size:18px;font-weight:800" id="priorityBadge">—</div>
+        </div>
+      </div>
+
+      <div id="aiAnalysis" style="padding:16px;background:rgba(0,0,0,0.3);border-radius:10px;margin-bottom:22px;border:1px solid var(--border)"></div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="/track" class="btn btn-primary">🔍 Track My Case</a>
+        <a href="/fir" class="btn btn-secondary">📄 Generate FIR Draft</a>
+        <button onclick="resetForm()" class="btn btn-ghost">Submit Another</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => { await requireAuth(); })();
+
+let voiceInputInstances = {};
+
+function voiceFor(fieldId, btnId) {
+  if (!voiceInputInstances[fieldId]) {
+    voiceInputInstances[fieldId] = new VoiceInput(
+      text => {
+        const el = document.getElementById(fieldId);
+        if (el.tagName === 'TEXTAREA') el.value += (el.value ? '\n' : '') + text;
+        else el.value = text;
+      },
+      state => {
+        const btn = document.getElementById(btnId);
+        if (state === 'recording') { btn.classList.add('recording'); btn.textContent = '⏹️'; }
+        else if (state === 'processing') { btn.textContent = '⏳'; }
+        else { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+      }
+    );
+  }
+  voiceInputInstances[fieldId].toggle();
+}
+
+document.getElementById('complaintForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting & analyzing with AI...';
+
+  try {
+    const payload = {
+      name: document.getElementById('c-name').value.trim(),
+      phone: document.getElementById('c-phone').value.trim(),
+      email: document.getElementById('c-email').value.trim() || undefined,
+      city: document.getElementById('c-city').value.trim(),
+      type: document.getElementById('c-type').value,
+      description: document.getElementById('c-desc').value.trim(),
+      evidence: document.getElementById('c-evidence').value.trim() || undefined,
+    };
+    if (document.getElementById('c-loss').value.trim()) {
+      payload.loss_amount = document.getElementById('c-loss').value.trim();
+    }
+
+    const res = await api.post('/api/v1/complaints/submit', payload);
+
+    document.getElementById('trackingId').textContent = res.tracking_id || ('CC-' + Date.now().toString(36).toUpperCase());
+
+    const priority = (res.auto_priority || 'MEDIUM').toUpperCase();
+    const colors = { CRITICAL:'var(--red)', HIGH:'var(--orange)', MEDIUM:'var(--cyan)', LOW:'var(--green)' };
+    document.getElementById('priorityBadge').style.color = colors[priority] || 'var(--cyan)';
+    document.getElementById('priorityBadge').textContent = priority;
+
+    const analysisEl = document.getElementById('aiAnalysis');
+    if (res.severity_score !== undefined || res.risk_flags?.length) {
+      analysisEl.innerHTML = `
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">🤖 AI Analysis Results</div>
+        ${res.severity_score !== undefined ? `
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+              <span style="color:var(--text-secondary)">Severity Score</span>
+              <span style="font-weight:800;color:${res.severity_score>60?'var(--red)':res.severity_score>30?'var(--orange)':'var(--green)'}">${res.severity_score}/100</span>
+            </div>
+            <div class="progress-bar" style="height:8px"><div class="progress-fill ${res.severity_score>60?'danger':'safe'}" style="width:${Math.min(res.severity_score,100)}%"></div></div>
+          </div>` : ''}
+        ${res.detected_categories?.length ? `<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Detected Categories:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${res.detected_categories.map(c=>`<span class="badge badge-purple">${escapeHtml(c)}</span>`).join('')}</div></div>` : ''}
+        ${res.risk_flags?.length ? `<div style="display:flex;flex-direction:column;gap:5px">${res.risk_flags.map(f=>`<div style="font-size:12px;padding:7px 10px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.2);border-radius:6px;color:var(--orange)">${escapeHtml(f)}</div>`).join('')}</div>` : ''}
+      `;
+    } else {
+      analysisEl.innerHTML = `<div style="font-size:13px;color:var(--text-secondary)">✅ Complaint received and queued for review by our AI system. You will receive updates on your tracking ID.</div>`;
+    }
+
+    document.getElementById('formSection').classList.add('hidden');
+    document.getElementById('successSection').classList.remove('hidden');
+    showToast('Complaint submitted successfully!', 'success');
+  } catch (err) {
+    showToast('Submission failed: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Submit Complaint with AI Analysis';
+  }
+});
+
+function resetForm() {
+  document.getElementById('complaintForm').reset();
+  document.getElementById('formSection').classList.remove('hidden');
+  document.getElementById('successSection').classList.add('hidden');
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').innerHTML = '🚀 Submit Complaint with AI Analysis';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,544 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Threat Detection — NovaShield{% endblock %}
+{% block nav_detect %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">⚡ Threat Detection</h1>
+  <p class="page-subtitle">AI-powered analysis — deepfake video · voice spoofing · phishing URLs · voice I/O enabled</p>
+</div>
+
+<!-- Detection Tabs -->
+<div class="tabs mb-6" id="mainTabs">
+  <button class="tab active" onclick="switchTab('deepfake',this)">🎭 Deepfake Video</button>
+  <button class="tab" onclick="switchTab('voice',this)">🎤 Voice Spoofing</button>
+  <button class="tab" onclick="switchTab('phishing',this)">🔗 Phishing URL</button>
+</div>
+
+<!-- ── DEEPFAKE TAB ── -->
+<div id="tab-deepfake">
+  <div class="grid-2" style="gap:20px;align-items:flex-start">
+    <div class="card p-6">
+      <h3 style="font-weight:700;margin-bottom:6px">Upload Media File</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Analyzes facial artifacts, blink patterns, and compression anomalies</p>
+      <div class="dropzone" id="df-dropzone">
+        <div class="dropzone-icon">🎭</div>
+        <div class="dropzone-text">Drop video or image here</div>
+        <div class="dropzone-hint">MP4 · AVI · MOV · JPG · PNG · Max 50MB</div>
+      </div>
+      <input type="file" id="df-input" accept="video/*,image/*" style="display:none">
+      <div id="df-preview" class="hidden mt-4" style="padding:12px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px">
+        <span>📎</span><span id="df-filename" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button onclick="clearFile('df')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;flex-shrink:0">✕</button>
+      </div>
+      <button class="btn btn-primary w-full mt-4" id="df-btn" onclick="runDeepfake()" style="justify-content:center" disabled>
+        🚀 Analyze for Deepfake
+      </button>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:center">
+        EfficientNet-B0 + Vision Transformer · Section 65B compliant report
+      </div>
+    </div>
+
+    <div class="card p-6" id="df-result-card">
+      <h3 style="font-weight:700;margin-bottom:16px">Analysis Result</h3>
+      <div id="df-result">
+        <div class="empty-state">
+          <div class="empty-state-icon">🎭</div>
+          <div class="empty-state-title">Upload a file to analyze</div>
+          <p style="font-size:13px;margin-top:4px;color:var(--text-muted)">Supports video and image formats</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VOICE TAB ── -->
+<div id="tab-voice" class="hidden">
+  <div class="grid-2" style="gap:20px;align-items:flex-start">
+    <div class="card p-6">
+      <h3 style="font-weight:700;margin-bottom:6px">Upload or Record Audio</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Analyzes 89 spectral features including MFCCs, chroma, and ZCR</p>
+
+      <div class="dropzone" id="v-dropzone">
+        <div class="dropzone-icon">🎤</div>
+        <div class="dropzone-text">Drop audio file here</div>
+        <div class="dropzone-hint">WAV · MP3 · OGG · M4A · WebM · Max 20MB</div>
+      </div>
+      <input type="file" id="v-input" accept="audio/*" style="display:none">
+      <div id="v-preview" class="hidden mt-4" style="padding:12px;background:rgba(124,58,237,0.04);border:1px solid rgba(124,58,237,0.15);border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px">
+        <span>🎵</span><span id="v-filename" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button onclick="clearFile('v')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;flex-shrink:0">✕</button>
+      </div>
+
+      <!-- Record section -->
+      <div style="margin-top:16px;padding:16px;background:rgba(124,58,237,0.04);border:1px solid rgba(124,58,237,0.15);border-radius:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.5px;text-transform:uppercase">Or Record Live</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="voice-btn" id="recordBtn" onclick="toggleRecord()" title="Start/stop recording">🎤</button>
+          <div>
+            <div style="font-size:14px;font-weight:600" id="recordStatus">Click mic to start recording</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px" id="recordTime">Ready</div>
+          </div>
+        </div>
+        <!-- Waveform visualizer placeholder -->
+        <div id="waveformViz" style="height:36px;background:rgba(0,0,0,0.2);border-radius:6px;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:2px;overflow:hidden">
+          <span style="font-size:11px;color:var(--text-muted)">Waveform will appear while recording</span>
+        </div>
+      </div>
+
+      <button class="btn btn-purple w-full mt-4" id="v-btn" onclick="runVoice()" style="justify-content:center" disabled>
+        🚀 Analyze for Voice Spoofing
+      </button>
+    </div>
+
+    <div class="card p-6">
+      <h3 style="font-weight:700;margin-bottom:16px">Analysis Result</h3>
+      <div id="v-result">
+        <div class="empty-state">
+          <div class="empty-state-icon">🎤</div>
+          <div class="empty-state-title">Upload or record audio</div>
+          <p style="font-size:13px;margin-top:4px;color:var(--text-muted)">AI analyzes 89 spectral features</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PHISHING TAB ── -->
+<div id="tab-phishing" class="hidden">
+  <div class="grid-2" style="gap:20px;align-items:flex-start">
+    <div class="card p-6">
+      <h3 style="font-weight:700;margin-bottom:6px">URL / Text Analysis</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">XGBoost + 25 heuristic rules detect malicious URLs and phishing content</p>
+
+      <!-- URL input with voice -->
+      <div class="form-group mb-4">
+        <label class="form-label">URL or Text to Scan</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input class="form-input" type="text" id="url-input" placeholder="https://suspicious-site.com or paste text..." style="flex:1">
+          <button class="voice-btn" id="urlVoiceBtn" onclick="toggleUrlVoice()" title="Speak a URL">🎤</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:5px" id="urlVoiceStatus">
+          Click 🎤 to speak a URL via Groq Whisper AI
+        </div>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label">Additional Context (Optional)</label>
+        <textarea class="form-textarea" id="url-content" placeholder="Paste email body, SMS text, or description of suspicious content..." style="min-height:80px"></textarea>
+      </div>
+
+      <!-- Quick examples -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Quick test examples:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="badge badge-red" style="cursor:pointer;border:none;padding:5px 10px" onclick="setUrl('http://paypa1-secure-login.xyz/verify')">PayPal phish</button>
+          <button class="badge badge-red" style="cursor:pointer;border:none;padding:5px 10px" onclick="setUrl('https://sbi-net-banking-update.tk/login')">SBI phish</button>
+          <button class="badge badge-orange" style="cursor:pointer;border:none;padding:5px 10px" onclick="setUrl('http://bit.ly/3suspicious-link')">Short URL</button>
+          <button class="badge badge-green" style="cursor:pointer;border:none;padding:5px 10px" onclick="setUrl('https://www.google.com')">Safe URL</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary w-full" id="p-btn" onclick="runPhishing()" style="justify-content:center">
+        🔍 Scan for Phishing
+      </button>
+    </div>
+
+    <div class="card p-6">
+      <h3 style="font-weight:700;margin-bottom:16px">Scan Result</h3>
+      <div id="p-result">
+        <div class="empty-state">
+          <div class="empty-state-icon">🔗</div>
+          <div class="empty-state-title">Enter a URL to scan</div>
+          <p style="font-size:13px;margin-top:4px;color:var(--text-muted)">XGBoost + 25 heuristic rules</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Report Modal -->
+<div id="resultModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h2 style="font-size:18px;font-weight:700" id="modalTitle">Detection Report</h2>
+      <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted)">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="speakResult()" id="speakBtn">🔊 Read Result Aloud</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentResult = null;
+let voiceOut = new VoiceOutput();
+let urlVoiceIn = null;
+let mediaRecorder = null;
+let recorderStream = null;
+let audioChunks = [];
+let recordInterval = null;
+let recordSeconds = 0;
+let waveformInterval = null;
+let analyserNode = null;
+let audioCtx = null;
+
+(async () => { await requireAuth(); })();
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  ['deepfake','voice','phishing'].forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
+  document.querySelectorAll('#mainTabs .tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+}
+
+// ── File Dropzones ─────────────────────────────────────────────────────────
+initDropzone(document.getElementById('df-dropzone'), document.getElementById('df-input'), f => {
+  document.getElementById('df-filename').textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + 'MB)';
+  document.getElementById('df-preview').classList.remove('hidden');
+  document.getElementById('df-btn').disabled = false;
+  document.querySelector('#df-dropzone .dropzone-text').textContent = '✅ File ready for analysis';
+  window._dfFile = f;
+});
+initDropzone(document.getElementById('v-dropzone'), document.getElementById('v-input'), f => {
+  document.getElementById('v-filename').textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + 'MB)';
+  document.getElementById('v-preview').classList.remove('hidden');
+  document.getElementById('v-btn').disabled = false;
+  document.querySelector('#v-dropzone .dropzone-text').textContent = '✅ Audio ready for analysis';
+  window._vFile = f;
+});
+
+function clearFile(prefix) {
+  window['_'+prefix+'File'] = null;
+  document.getElementById(prefix+'-preview').classList.add('hidden');
+  document.getElementById(prefix+'-btn').disabled = true;
+  document.querySelector('#'+prefix+'-dropzone .dropzone-text').textContent = prefix==='df' ? 'Drop video or image here' : 'Drop audio file here';
+  if (prefix === 'v') { stopRecord(); }
+}
+
+function setUrl(url) { document.getElementById('url-input').value = url; document.getElementById('url-input').focus(); }
+
+// ── Voice Recording (for voice analysis) ──────────────────────────────────
+async function toggleRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') stopRecord();
+  else await startRecord();
+}
+
+async function startRecord() {
+  try {
+    recorderStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+
+    // Set up audio visualizer
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 64;
+    const src = audioCtx.createMediaStreamSource(recorderStream);
+    src.connect(analyserNode);
+    startWaveform();
+
+    const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg','audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+    mediaRecorder = new MediaRecorder(recorderStream, mimeType ? { mimeType } : {});
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      stopWaveform();
+      const mT = mediaRecorder.mimeType || 'audio/webm';
+      const ext = mT.includes('mp4') ? '.mp4' : mT.includes('ogg') ? '.ogg' : '.webm';
+      const blob = new Blob(audioChunks, { type: mT });
+      window._vFile = new File([blob], 'recording' + ext, { type: mT });
+      document.getElementById('v-filename').textContent = `Recorded audio (${(blob.size/1024).toFixed(0)} KB)`;
+      document.getElementById('v-preview').classList.remove('hidden');
+      document.getElementById('v-btn').disabled = false;
+      document.querySelector('#v-dropzone .dropzone-text').textContent = '✅ Recording ready';
+      recorderStream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start(250);
+    recordSeconds = 0;
+    document.getElementById('recordBtn').classList.add('recording');
+    document.getElementById('recordBtn').textContent = '⏹️';
+    document.getElementById('recordStatus').textContent = '🔴 Recording...';
+    recordInterval = setInterval(() => {
+      recordSeconds++;
+      document.getElementById('recordTime').textContent = recordSeconds + 's · Click ⏹️ to stop';
+      if (recordSeconds >= 60) stopRecord(); // auto-stop at 60s
+    }, 1000);
+  } catch (err) {
+    const msg = err.name === 'NotAllowedError' ? 'Microphone access denied. Please allow in browser settings.' : 'Could not access microphone: ' + err.message;
+    showToast(msg, 'error');
+  }
+}
+
+function stopRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+  clearInterval(recordInterval);
+  stopWaveform();
+  if (audioCtx) { try { audioCtx.close(); } catch {} audioCtx = null; }
+  const btn = document.getElementById('recordBtn');
+  if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+  const rs = document.getElementById('recordStatus');
+  if (rs) rs.textContent = 'Recording saved';
+  const rt = document.getElementById('recordTime');
+  if (rt) rt.textContent = recordSeconds + 's recorded';
+}
+
+function startWaveform() {
+  const viz = document.getElementById('waveformViz');
+  viz.innerHTML = '';
+  const bars = 24;
+  for (let i = 0; i < bars; i++) {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'width:4px;border-radius:2px;background:var(--purple);transition:height 0.1s ease;min-height:3px';
+    viz.appendChild(bar);
+  }
+  const barEls = viz.querySelectorAll('div');
+  waveformInterval = setInterval(() => {
+    if (!analyserNode) return;
+    const data = new Uint8Array(analyserNode.frequencyBinCount);
+    analyserNode.getByteFrequencyData(data);
+    barEls.forEach((bar, i) => {
+      const v = data[Math.floor(i * data.length / bars)] / 255;
+      const h = Math.max(3, Math.round(v * 36));
+      bar.style.height = h + 'px';
+    });
+  }, 80);
+}
+
+function stopWaveform() {
+  clearInterval(waveformInterval);
+  const viz = document.getElementById('waveformViz');
+  if (viz) {
+    viz.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">Recording stopped</span>';
+  }
+}
+
+// ── Voice input for URL ────────────────────────────────────────────────────
+function toggleUrlVoice() {
+  if (!urlVoiceIn) {
+    urlVoiceIn = new VoiceInput(
+      text => {
+        document.getElementById('url-input').value = text;
+        document.getElementById('urlVoiceStatus').textContent = '✅ Transcribed: ' + text.substring(0, 60) + (text.length > 60 ? '...' : '');
+      },
+      state => {
+        const btn = document.getElementById('urlVoiceBtn');
+        const status = document.getElementById('urlVoiceStatus');
+        if (state === 'recording') { btn.classList.add('recording'); btn.textContent = '⏹️'; status.textContent = '🎤 Listening — speak the URL now...'; }
+        else if (state === 'processing') { btn.textContent = '⏳'; status.textContent = '⏳ Transcribing with Groq Whisper...'; }
+        else { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+      }
+    );
+  }
+  urlVoiceIn.toggle();
+}
+
+// ── Detection Runners ──────────────────────────────────────────────────────
+async function runDeepfake() {
+  const file = window._dfFile;
+  if (!file) return;
+  const btn = document.getElementById('df-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing with AI...';
+  setResult('df', 'loading');
+  try {
+    const form = new FormData();
+    form.append('video', file);
+    const res = await api.upload('/api/v1/detect/deepfake', form);
+    if (res.detection_id) {
+      showToast('Analysis queued — polling for results...', 'info', 3000);
+      pollResult(res.detection_id, data => {
+        showDetectionResult('df', data);
+        btn.disabled = false; btn.textContent = '🚀 Analyze for Deepfake';
+      });
+    } else {
+      throw new Error('No detection ID returned');
+    }
+  } catch (err) {
+    showToast('Analysis failed: ' + err.message, 'error');
+    setResult('df', 'error', err.message);
+    btn.disabled = false; btn.textContent = '🚀 Analyze for Deepfake';
+  }
+}
+
+async function runVoice() {
+  const file = window._vFile;
+  if (!file) return;
+  const btn = document.getElementById('v-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  setResult('v', 'loading');
+  try {
+    const form = new FormData();
+    form.append('audio', file);
+    const res = await api.upload('/api/v1/detect/voice', form);
+    if (res.detection_id) {
+      showToast('Voice analysis queued — polling for results...', 'info', 3000);
+      pollResult(res.detection_id, data => {
+        showDetectionResult('v', data);
+        btn.disabled = false; btn.textContent = '🚀 Analyze for Voice Spoofing';
+      });
+    } else {
+      throw new Error('No detection ID returned');
+    }
+  } catch (err) {
+    showToast('Analysis failed: ' + err.message, 'error');
+    setResult('v', 'error', err.message);
+    btn.disabled = false; btn.textContent = '🚀 Analyze for Voice Spoofing';
+  }
+}
+
+async function runPhishing() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { showToast('Please enter a URL or text to scan', 'warning'); return; }
+  const btn = document.getElementById('p-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Scanning...';
+  setResult('p', 'loading');
+  try {
+    const data = await api.post('/api/v1/detect/phishing', {
+      url,
+      content: document.getElementById('url-content').value || undefined,
+    });
+    showDetectionResult('p', data);
+  } catch (err) {
+    showToast('Scan failed: ' + err.message, 'error');
+    setResult('p', 'error', err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 Scan for Phishing';
+  }
+}
+
+// ── Result Rendering ───────────────────────────────────────────────────────
+function setResult(prefix, state, msg = '') {
+  const el = document.getElementById(prefix+'-result');
+  if (state === 'loading') {
+    el.innerHTML = `<div style="text-align:center;padding:48px 20px">
+      <div class="spinner spinner-lg" style="margin:0 auto 20px"></div>
+      <div style="color:var(--text-secondary);font-weight:600">AI analyzing content...</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px">This may take 10-30 seconds for video/audio</div>
+    </div>`;
+  } else if (state === 'error') {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Analysis Failed</div><p style="font-size:13px;color:var(--text-muted);margin-top:6px">${escapeHtml(msg)}</p></div>`;
+  }
+}
+
+function showDetectionResult(prefix, data) {
+  currentResult = data;
+  const isFake = data.is_fake;
+  const conf = Math.round((data.confidence || 0) * 100);
+  const el = document.getElementById(prefix+'-result');
+
+  if (data.status === 'failed') {
+    setResult(prefix, 'error', data.explanation || data.error || 'Analysis failed. Please try again.');
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="risk-indicator ${isFake ? 'danger' : 'safe'}" style="margin-bottom:18px">
+      <div class="risk-dot ${isFake ? 'danger' : 'safe'}"></div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:16px;letter-spacing:-0.3px">${isFake ? '⚠️ THREAT DETECTED' : '✅ AUTHENTIC'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${isFake ? 'AI has detected manipulation or malicious content' : 'Content appears genuine and safe'}</div>
+      </div>
+      <span class="badge ${isFake ? 'badge-red' : 'badge-green'}" style="font-size:13px;padding:5px 12px">${conf}%</span>
+    </div>
+
+    <div class="mb-4">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
+        <span style="color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Risk Score</span>
+        <span style="color:${isFake?'var(--red)':'var(--green)'};font-weight:800">${conf}/100</span>
+      </div>
+      <div class="progress-bar" style="height:9px">
+        <div class="progress-fill ${isFake?'danger':'safe'}" style="width:${conf}%"></div>
+      </div>
+    </div>
+
+    ${data.spoof_type ? `<div style="margin-bottom:12px;padding:8px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:7px;font-size:13px"><span style="color:var(--text-muted)">Spoof Type:</span> <strong style="color:#a78bfa">${escapeHtml(data.spoof_type)}</strong></div>` : ''}
+
+    ${data.risk_level ? `<div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)"><span style="color:var(--text-muted)">Risk Level:</span> <strong>${escapeHtml(data.risk_level)}</strong></div>` : ''}
+
+    ${data.threats && data.threats.length ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Threat Indicators</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${data.threats.map(t => `<div style="font-size:12px;color:var(--text-secondary);padding:7px 12px;background:rgba(255,51,102,0.05);border-radius:7px;border-left:2px solid var(--red)">⚠️ ${escapeHtml(t)}</div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${data.explanation ? `<div style="font-size:13px;color:var(--text-secondary);padding:12px 14px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:9px;line-height:1.7;margin-bottom:14px">💡 ${escapeHtml(data.explanation)}</div>` : ''}
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="showFullReport()">📊 Full Report</button>
+      <button class="btn btn-ghost btn-sm" id="speakResBtn" onclick="speakCurrentResult()">🔊 Read Aloud</button>
+      ${(data.id || data.detection_id) ? `<a href="/api/v1/detections/${data.id || data.detection_id}/report" target="_blank" class="btn btn-ghost btn-sm">📄 Section 65B</a>` : ''}
+    </div>
+  `;
+
+  showToast(isFake ? '⚠️ Threat detected! Exercise caution.' : '✅ Content verified as authentic.', isFake ? 'error' : 'success');
+}
+
+function showFullReport() {
+  if (!currentResult) return;
+  const d = currentResult;
+  const isFake = d.is_fake;
+  const conf = Math.round((d.confidence || 0) * 100);
+  document.getElementById('modalTitle').textContent = (isFake ? '⚠️ THREAT DETECTED' : '✅ AUTHENTIC') + ' — Full Forensic Report';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Verdict</div>
+        <div style="font-size:22px;font-weight:800;margin-top:5px;color:${isFake?'var(--red)':'var(--green)'}">${isFake?'FAKE':'REAL'}</div>
+      </div>
+      <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Confidence</div>
+        <div style="font-size:22px;font-weight:800;margin-top:5px">${conf}%</div>
+      </div>
+      <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Detection ID</div>
+        <div style="font-size:12px;font-weight:700;margin-top:5px;font-family:var(--font-mono);color:var(--cyan);word-break:break-all">${d.id || d.detection_id || '—'}</div>
+      </div>
+      <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Status</div>
+        <div style="font-size:14px;font-weight:700;margin-top:5px;color:var(--green)">${d.status || 'completed'}</div>
+      </div>
+    </div>
+    ${d.explanation ? `<div style="padding:14px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:9px;font-size:13px;color:var(--text-secondary);line-height:1.75;margin-bottom:14px">💡 <strong style="color:var(--text-primary)">AI Analysis:</strong><br><br>${escapeHtml(d.explanation)}</div>` : ''}
+    ${d.threats && d.threats.length ? `<div style="padding:14px;background:rgba(255,51,102,0.04);border:1px solid rgba(255,51,102,0.15);border-radius:9px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:10px;letter-spacing:1px">THREAT INDICATORS</div>
+      ${d.threats.map(t => `<div style="font-size:13px;padding:5px 0;color:var(--text-secondary);border-bottom:1px solid rgba(255,255,255,0.04)">• ${escapeHtml(t)}</div>`).join('')}
+    </div>` : ''}
+    <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px">
+      🏛️ This report is Section 65B IT Act compliant and admissible as digital evidence in Indian courts
+    </div>
+  `;
+  document.getElementById('resultModal').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('resultModal').classList.add('hidden'); }
+
+function speakCurrentResult() {
+  if (!currentResult) return;
+  speakResult();
+}
+
+function speakResult() {
+  if (!currentResult) return;
+  const isFake = currentResult.is_fake;
+  const conf = Math.round((currentResult.confidence || 0) * 100);
+  const explanation = currentResult.explanation ? ' Details: ' + currentResult.explanation.substring(0, 200) : '';
+  const text = isFake
+    ? `Threat detected. Confidence ${conf} percent. This content appears to be manipulated or malicious. Exercise caution immediately.${explanation}`
+    : `Analysis complete. Content verified as authentic with ${conf} percent confidence. No threats detected.${explanation}`;
+
+  const speakBtns = document.querySelectorAll('#speakResBtn, #speakBtn');
+  voiceOut.speak(text,
+    () => speakBtns.forEach(b => b.textContent = '🔊 Speaking...'),
+    () => {
+      document.getElementById('speakBtn') && (document.getElementById('speakBtn').textContent = '🔊 Read Result Aloud');
+      document.querySelectorAll('#speakResBtn').forEach(b => b.textContent = '🔊 Read Aloud');
+    }
+  );
+}
+</script>
+{% endblock %}

@@ -1,0 +1,317 @@
+{% extends "base_dashboard.html" %}
+{% block title %}FIR Auto-Draft — NovaShield{% endblock %}
+{% block nav_fir %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📄 FIR Auto-Draft Generator</h1>
+  <p class="page-subtitle">AI generates a legally-formatted First Information Report using Groq AI · Powered by Groq Llama 3.3 70B</p>
+</div>
+
+<div class="grid-2" style="gap:24px;align-items:flex-start">
+  <!-- Input Form -->
+  <div class="card p-6">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:4px;height:24px;background:linear-gradient(180deg,var(--cyan),var(--purple));border-radius:2px"></div>
+      <h3 style="font-weight:700;color:var(--cyan)">Incident Details</h3>
+    </div>
+
+    <form id="firForm">
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="form-group">
+          <label class="form-label">Complainant Name *</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" type="text" id="f-name" placeholder="Your full legal name" required style="flex:1">
+            <button type="button" class="voice-btn" id="nameVBtn" onclick="voiceField('f-name','nameVBtn')" title="Speak name" style="flex-shrink:0;width:44px;height:44px;font-size:18px">🎤</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Crime Type *</label>
+          <select class="form-select" id="f-type" required>
+            <option value="">Select crime type...</option>
+            <option value="deepfake">Deepfake / Morphed Content</option>
+            <option value="phishing">Phishing / Online Fraud</option>
+            <option value="voice_spoofing">Voice Spoofing / Impersonation</option>
+            <option value="digital_arrest">Digital Arrest Scam</option>
+            <option value="identity_theft">Identity Theft</option>
+            <option value="cyberbullying">Cyberbullying / Harassment</option>
+            <option value="financial_fraud">Financial Fraud</option>
+            <option value="other">Other Cybercrime</option>
+          </select>
+        </div>
+
+        <div class="grid-2" style="gap:12px">
+          <div class="form-group">
+            <label class="form-label">Date of Incident *</label>
+            <input class="form-input" type="date" id="f-date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Financial Loss (if any)</label>
+            <input class="form-input" type="text" id="f-loss" placeholder="₹0 or enter amount">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Incident Location *</label>
+          <input class="form-input" type="text" id="f-location" placeholder="City, State or online platform name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Incident Description *</label>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <textarea class="form-textarea" id="f-desc" placeholder="Describe what happened in detail — when, where, how, who was involved, what was lost..." required style="min-height:130px;flex:1"></textarea>
+            <button type="button" class="voice-btn" id="descVBtn" onclick="voiceField('f-desc','descVBtn')" title="Dictate description" style="flex-shrink:0;width:44px;height:44px;font-size:18px;margin-top:2px">🎤</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="descVoiceStatus">Click 🎤 to dictate your statement using Groq Whisper AI</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Accused Person Details (if known)</label>
+          <input class="form-input" type="text" id="f-accused" placeholder="Name, phone number, social media handle, profile link...">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="firBtn" style="justify-content:center;padding:13px">
+          🤖 Generate FIR with Groq AI
+        </button>
+        <div style="font-size:11px;color:var(--text-muted);text-align:center">Generation takes 5–15 seconds · Groq Llama 3.3 70B</div>
+      </div>
+    </form>
+  </div>
+
+  <!-- FIR Output -->
+  <div class="card p-6" id="firOutputCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:4px;height:24px;background:linear-gradient(180deg,var(--purple),var(--cyan));border-radius:2px"></div>
+        <h3 style="font-weight:700">Generated FIR Draft</h3>
+      </div>
+      <div style="display:flex;gap:6px" id="firActions" class="hidden">
+        <button class="btn btn-secondary btn-sm" onclick="printFir()">🖨️ Print</button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadFir()">⬇️ Download</button>
+        <button class="btn btn-ghost btn-sm" id="speakFirBtn" onclick="speakFir()">🔊 Read</button>
+      </div>
+    </div>
+
+    <div id="firOutput">
+      <div class="empty-state">
+        <div class="empty-state-icon">📄</div>
+        <div class="empty-state-title">FIR draft will appear here</div>
+        <p style="font-size:13px;margin-top:6px;color:var(--text-muted)">Fill in the form and click Generate</p>
+      </div>
+    </div>
+
+    <!-- AI Analysis Box -->
+    <div id="firAnalysis" class="hidden mt-4" style="padding:16px;background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.2);border-radius:10px">
+      <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">🤖 AI Priority Analysis</div>
+      <div id="firAnalysisContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Legal Chat Assistant -->
+<div class="card p-6 mt-6">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+    <div style="width:4px;height:24px;background:linear-gradient(180deg,var(--green),var(--cyan));border-radius:2px"></div>
+    <h3 style="font-weight:700">🤖 NovaShield Legal Assistant</h3>
+    <span class="badge badge-green" style="margin-left:auto">Voice Enabled</span>
+  </div>
+  <div id="chatMessages" style="height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;border:1px solid var(--border)">
+    <div class="chat-bubble-ai">
+      👋 Hi! I'm the NovaShield Legal Assistant. Ask me anything about Indian cybercrime laws, IPC sections, your rights as a complainant, or how to proceed with your case. Voice queries supported!
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input class="form-input" type="text" id="chatInput" placeholder="Ask about IPC sections, your rights, complaint process..." style="flex:1">
+    <button class="voice-btn" id="chatVoiceBtn" onclick="toggleChatVoice()" title="Speak your question" style="flex-shrink:0">🎤</button>
+    <button class="btn btn-purple" onclick="sendChat()" id="chatSendBtn" style="flex-shrink:0">Send</button>
+  </div>
+  <div style="font-size:11px;color:var(--text-muted);margin-top:6px" id="chatVoiceStatus">Click 🎤 to ask by voice — AI responds via text and speech</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => { await requireAuth(); })();
+
+let firText = '';
+let voiceOut = new VoiceOutput();
+let voiceInstances = {};
+let chatVoice = null;
+
+// Set today as default date
+document.getElementById('f-date').valueAsDate = new Date();
+
+// ── Voice field input ────────────────────────────────────────────────────────
+function voiceField(fieldId, btnId) {
+  if (!voiceInstances[fieldId]) {
+    voiceInstances[fieldId] = new VoiceInput(
+      text => {
+        const el = document.getElementById(fieldId);
+        if (el.tagName === 'TEXTAREA') el.value += (el.value ? '\n' : '') + text;
+        else el.value = text;
+        if (fieldId === 'f-desc') {
+          document.getElementById('descVoiceStatus').textContent = '✅ Dictated: "' + text.substring(0, 60) + (text.length > 60 ? '...' : '') + '"';
+        }
+      },
+      state => {
+        const btn = document.getElementById(btnId);
+        if (state === 'recording') { btn.classList.add('recording'); btn.textContent = '⏹️'; }
+        else if (state === 'processing') { btn.textContent = '⏳'; }
+        else { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+      }
+    );
+  }
+  voiceInstances[fieldId].toggle();
+}
+
+// ── Chat voice ───────────────────────────────────────────────────────────────
+function toggleChatVoice() {
+  if (!chatVoice) {
+    chatVoice = new VoiceInput(
+      text => {
+        document.getElementById('chatInput').value = text;
+        document.getElementById('chatVoiceStatus').textContent = '✅ "' + text + '"';
+        sendChat();
+      },
+      state => {
+        const btn = document.getElementById('chatVoiceBtn');
+        if (state === 'recording') { btn.classList.add('recording'); btn.textContent = '⏹️'; document.getElementById('chatVoiceStatus').textContent = '🎤 Listening...'; }
+        else if (state === 'processing') { btn.textContent = '⏳'; document.getElementById('chatVoiceStatus').textContent = '⏳ Transcribing...'; }
+        else { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+      }
+    );
+  }
+  chatVoice.toggle();
+}
+
+// ── FIR Form submission ──────────────────────────────────────────────────────
+document.getElementById('firForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('firBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Groq AI is drafting your FIR...';
+
+  document.getElementById('firOutput').innerHTML = `
+    <div style="text-align:center;padding:48px 20px">
+      <div class="spinner spinner-lg" style="margin:0 auto 20px"></div>
+      <div style="color:var(--text-secondary);font-weight:600">Groq Llama 3.3 is drafting your FIR...</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px">This may take 5–20 seconds depending on complexity</div>
+    </div>`;
+  document.getElementById('firActions').classList.add('hidden');
+  document.getElementById('firAnalysis').classList.add('hidden');
+
+  try {
+    const res = await api.post('/api/v1/groq/fir-draft', {
+      complainant_name: document.getElementById('f-name').value.trim(),
+      complaint_type: document.getElementById('f-type').value,
+      incident_date: document.getElementById('f-date').value,
+      incident_location: document.getElementById('f-location').value.trim(),
+      description: document.getElementById('f-desc').value.trim(),
+      accused_details: document.getElementById('f-accused').value.trim() || '',
+      loss_amount: document.getElementById('f-loss').value.trim() || '',
+    });
+
+    firText = res.fir_text || '';
+    document.getElementById('firOutput').innerHTML = `<div class="fir-output">${escapeHtml(firText)}</div>`;
+    document.getElementById('firActions').classList.remove('hidden');
+
+    if (res.ai_analysis) {
+      const a = res.ai_analysis;
+      const priorityColor = { HIGH:'var(--red)', MEDIUM:'var(--orange)', LOW:'var(--green)', CRITICAL:'#ff0044' }[a.priority] || 'var(--cyan)';
+      document.getElementById('firAnalysisContent').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Priority</div>
+            <div style="font-weight:800;font-size:18px;margin-top:4px;color:${priorityColor}">${a.priority}</div>
+          </div>
+          <div style="padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Severity Score</div>
+            <div style="font-weight:800;font-size:18px;margin-top:4px">${a.estimated_severity}<span style="font-size:12px;color:var(--text-muted)">/100</span></div>
+          </div>
+        </div>
+        ${res.applicable_sections ? `<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;padding:10px 12px;background:rgba(0,212,255,0.04);border-radius:8px;border:1px solid rgba(0,212,255,0.12)"><strong style="color:var(--cyan)">Applicable Legal Sections:</strong><br>${escapeHtml(res.applicable_sections)}</div>` : ''}
+      `;
+      document.getElementById('firAnalysis').classList.remove('hidden');
+    }
+
+    showToast('FIR generated successfully with Groq AI!', 'success');
+    voiceOut.speak('FIR draft generated successfully. You can now print or download the document.', null, null);
+  } catch (err) {
+    document.getElementById('firOutput').innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">${escapeHtml(err.message)}</div></div>`;
+    showToast('FIR generation failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 Generate FIR with Groq AI';
+  }
+});
+
+// ── FIR Actions ──────────────────────────────────────────────────────────────
+function printFir() {
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>FIR Draft — NovaShield</title>
+    <style>body{font-family:"Courier New",monospace;font-size:13px;line-height:1.9;padding:48px;color:#111;white-space:pre-wrap;max-width:800px;margin:0 auto}h1{font-size:18px;text-align:center;margin-bottom:24px;letter-spacing:2px}@media print{body{padding:20px}}</style></head>
+    <body><h1>FIRST INFORMATION REPORT (DRAFT)</h1><hr style="margin-bottom:24px">${escapeHtml(firText)}</body></html>`);
+  w.print();
+}
+
+function downloadFir() {
+  const blob = new Blob([firText], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `FIR_Draft_NovaShield_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function speakFir() {
+  if (!firText) return;
+  const excerpt = firText.substring(0, 600) + (firText.length > 600 ? '. The full FIR continues in the document.' : '');
+  voiceOut.speak(excerpt,
+    () => document.getElementById('speakFirBtn').textContent = '🔊 Speaking...',
+    () => document.getElementById('speakFirBtn').textContent = '🔊 Read'
+  );
+}
+
+// ── AI Chat ──────────────────────────────────────────────────────────────────
+document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendChat(); });
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  document.getElementById('chatSendBtn').disabled = true;
+
+  const messages = document.getElementById('chatMessages');
+  const userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble-user';
+  userBubble.textContent = msg;
+  messages.appendChild(userBubble);
+
+  const typingEl = document.createElement('div');
+  typingEl.className = 'chat-bubble-ai';
+  typingEl.style.cssText = 'color:var(--text-muted)';
+  typingEl.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;margin-right:6px"></span> NovaShield is thinking...';
+  messages.appendChild(typingEl);
+  messages.scrollTop = messages.scrollHeight;
+
+  try {
+    const context = firText ? `User is drafting a FIR. Current FIR context (first 300 chars): ${firText.substring(0, 300)}` : '';
+    const res = await api.post('/api/v1/groq/chat', { message: msg, context });
+    const responseText = res.response || 'I could not process that request.';
+    typingEl.style.cssText = '';
+    typingEl.className = 'chat-bubble-ai';
+    typingEl.innerHTML = '🤖 ' + escapeHtml(responseText);
+    voiceOut.speak(responseText.substring(0, 250), null, null);
+  } catch (err) {
+    typingEl.className = 'chat-bubble-ai';
+    typingEl.innerHTML = '❌ ' + escapeHtml(err.message || 'Failed to get response');
+  } finally {
+    document.getElementById('chatSendBtn').disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+  }
+}
+</script>
+{% endblock %}

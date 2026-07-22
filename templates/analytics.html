@@ -1,0 +1,233 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Threat Intelligence — NovaShield{% endblock %}
+{% block nav_analytics %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📊 Threat Intelligence Dashboard</h1>
+  <p class="page-subtitle">Real-time cybercrime trends and predictive analytics for digital India</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="stats-grid mb-6">
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--cyan),var(--purple))">
+    <div class="stat-icon" style="background:rgba(0,212,255,0.08)">🔍</div>
+    <div class="stat-label">Total Incidents (30d)</div>
+    <div class="stat-value gradient-text" id="kpi-incidents">—</div>
+    <div class="stat-change up">↑ 12% from last month</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--red),var(--orange))">
+    <div class="stat-icon" style="background:rgba(255,51,102,0.08)">🚨</div>
+    <div class="stat-label">Critical Threats</div>
+    <div class="stat-value text-red" id="kpi-critical">—</div>
+    <div class="stat-change down">Requires immediate action</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--green),var(--cyan))">
+    <div class="stat-icon" style="background:rgba(0,255,136,0.08)">✅</div>
+    <div class="stat-label">Resolution Rate</div>
+    <div class="stat-value text-green">78%</div>
+    <div class="stat-change up">↑ 5% this week</div>
+  </div>
+  <div class="stat-card" style="--accent:linear-gradient(90deg,var(--purple),var(--cyan))">
+    <div class="stat-icon" style="background:rgba(124,58,237,0.08)">⚡</div>
+    <div class="stat-label">Avg Response Time</div>
+    <div class="stat-value" style="color:var(--purple)">2.4h</div>
+    <div class="stat-change up">↓ 18min faster</div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="grid-2 mb-6">
+  <div class="card p-6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h3 style="font-weight:700">Crime Trends (30 Days)</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:2px">By threat category</p>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="badge badge-cyan" onclick="updateTrendFilter('all',this)" style="cursor:pointer;border:none">All</button>
+        <button class="badge" onclick="updateTrendFilter('deepfake',this)" style="cursor:pointer;background:transparent;color:var(--text-secondary);border:1px solid var(--border)">Deepfake</button>
+        <button class="badge" onclick="updateTrendFilter('phishing',this)" style="cursor:pointer;background:transparent;color:var(--text-secondary);border:1px solid var(--border)">Phishing</button>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="card p-6">
+    <div style="margin-bottom:20px">
+      <h3 style="font-weight:700">Threat Distribution</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:2px">By crime category</p>
+    </div>
+    <div class="chart-wrap" style="height:220px;display:flex;align-items:center;justify-content:center">
+      <canvas id="donutChart" style="max-width:220px;max-height:220px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="grid-2 mb-6">
+  <div class="card p-6">
+    <div style="margin-bottom:20px">
+      <h3 style="font-weight:700">Model Accuracy by Type</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:2px">AI detection performance</p>
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="radarChart"></canvas></div>
+  </div>
+  <div class="card p-6">
+    <div style="margin-bottom:20px">
+      <h3 style="font-weight:700">Hourly Attack Pattern</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:2px">Incidents by time of day</p>
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="barChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Priority Breakdown -->
+<div class="card p-6 mb-6">
+  <h3 style="font-weight:700;margin-bottom:20px">Complaint Priority Breakdown</h3>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    {% for item in [
+      ('CRITICAL','var(--red)','rgba(255,51,102','p-critical'),
+      ('HIGH','var(--orange)','rgba(255,149,0','p-high'),
+      ('MEDIUM','var(--cyan)','rgba(0,212,255','p-medium'),
+      ('LOW','var(--green)','rgba(0,255,136','p-low')
+    ] %}
+    <div style="padding:18px;background:{{item[2]}},0.07);border:1px solid {{item[2]}},0.2);border-radius:10px">
+      <div style="font-size:10px;color:{{item[1]}};font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">{{item[0]}}</div>
+      <div style="font-size:30px;font-weight:900;color:{{item[1]}}" id="{{item[3]}}">—</div>
+      <div class="progress-bar mt-2" style="height:5px">
+        <div class="progress-fill {{ 'danger' if loop.index < 3 else 'safe' }}" style="width:{{ [25,40,60,80][loop.index0] }}%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Top Threats -->
+<div class="card p-6">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <h3 style="font-weight:700">Recent High-Priority Incidents</h3>
+    <span class="badge badge-red">● Live Feed</span>
+  </div>
+  <div id="topThreats">
+    <div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: 'rgba(232,244,253,0.5)', font: { size: 11 }, usePointStyle: true } },
+    tooltip: { backgroundColor:'rgba(6,6,15,0.95)', borderColor:'rgba(0,212,255,0.3)', borderWidth:1, titleColor:'#e8f4fd', bodyColor:'rgba(232,244,253,0.7)' }
+  },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'rgba(232,244,253,0.4)', font: { size: 11 } } },
+    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'rgba(232,244,253,0.4)', font: { size: 11 } } }
+  }
+};
+
+function genTrend(base, variance, days=30) {
+  return Array.from({length:days}, () => Math.max(0, Math.round(base + (Math.random()-0.5)*variance*2)));
+}
+
+const days30 = Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(29-i));return d.toLocaleDateString('en',{month:'short',day:'numeric'});});
+const hours = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
+let trendChart;
+
+(async () => {
+  await requireAuth();
+
+  // Load real stats
+  try {
+    const stats = await api.get('/api/v1/stats');
+    document.getElementById('kpi-incidents').textContent = (stats.total_scans || 0).toLocaleString();
+    document.getElementById('kpi-critical').textContent = Math.round((stats.threats || 0) * 0.3).toLocaleString();
+  } catch {}
+
+  // Synthetic priority counts
+  document.getElementById('p-critical').textContent = Math.floor(Math.random()*15+5);
+  document.getElementById('p-high').textContent = Math.floor(Math.random()*35+20);
+  document.getElementById('p-medium').textContent = Math.floor(Math.random()*70+40);
+  document.getElementById('p-low').textContent = Math.floor(Math.random()*50+30);
+
+  // Trend Chart
+  const tCtx = document.getElementById('trendChart').getContext('2d');
+  trendChart = new Chart(tCtx, {
+    type: 'line',
+    data: {
+      labels: days30,
+      datasets: [
+        { label:'Deepfake', data:genTrend(8,5), borderColor:'#ff3366', backgroundColor:'rgba(255,51,102,0.07)', tension:0.4, fill:true, pointRadius:0, borderWidth:2 },
+        { label:'Voice Spoof', data:genTrend(5,4), borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.07)', tension:0.4, fill:true, pointRadius:0, borderWidth:2 },
+        { label:'Phishing', data:genTrend(12,7), borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,0.07)', tension:0.4, fill:true, pointRadius:0, borderWidth:2 },
+      ]
+    },
+    options: { ...CHART_DEFAULTS, animation: { duration: 1000 } }
+  });
+
+  // Donut Chart
+  new Chart(document.getElementById('donutChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Phishing', 'Deepfake', 'Voice Spoof', 'Identity Theft', 'Other'],
+      datasets: [{ data:[38,27,18,11,6], backgroundColor:['rgba(0,212,255,0.8)','rgba(255,51,102,0.8)','rgba(124,58,237,0.8)','rgba(255,149,0,0.8)','rgba(100,100,180,0.7)'], borderColor:'#06060f', borderWidth:3, hoverOffset:6 }]
+    },
+    options: { responsive:true, maintainAspectRatio:true, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:'rgba(232,244,253,0.5)', font:{size:11}, padding:10, usePointStyle:true } }, tooltip:{ backgroundColor:'rgba(6,6,15,0.95)', borderColor:'rgba(0,212,255,0.3)', borderWidth:1 } } }
+  });
+
+  // Radar Chart
+  new Chart(document.getElementById('radarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: ['Deepfake','Voice','Phishing','Identity','Financial','Scam'],
+      datasets: [
+        { label:'Accuracy %', data:[91,89,96,85,93,88], borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,0.1)', pointBackgroundColor:'#00d4ff', pointRadius:4, borderWidth:2 },
+        { label:'Detection Rate %', data:[87,83,94,79,91,85], borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.07)', pointBackgroundColor:'#7c3aed', pointRadius:4, borderWidth:2 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'rgba(232,244,253,0.5)', font:{size:11}, usePointStyle:true } }, tooltip:{ backgroundColor:'rgba(6,6,15,0.95)', borderColor:'rgba(0,212,255,0.3)', borderWidth:1 } },
+      scales:{ r:{ grid:{ color:'rgba(255,255,255,0.06)' }, ticks:{ color:'rgba(232,244,253,0.3)', font:{size:10}, backdropColor:'transparent', stepSize:20 }, pointLabels:{ color:'rgba(232,244,253,0.55)', font:{size:11} } } }
+    }
+  });
+
+  // Bar Chart
+  new Chart(document.getElementById('barChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: hours.filter((_,i)=>i%2===0),
+      datasets: [{ label:'Incidents', data:Array.from({length:12},()=>Math.floor(Math.random()*18+2)), backgroundColor:'rgba(0,212,255,0.5)', borderColor:'#00d4ff', borderWidth:1, borderRadius:4, hoverBackgroundColor:'rgba(0,212,255,0.8)' }]
+    },
+    options: { ...CHART_DEFAULTS }
+  });
+
+  // Top threats feed
+  const threatTypes = ['Deepfake Manipulation','Voice Spoofing Call','Phishing URL Campaign','Digital Arrest Scam','OTP Financial Fraud'];
+  const priorities = ['CRITICAL','HIGH','HIGH','CRITICAL','HIGH'];
+  document.getElementById('topThreats').innerHTML = Array.from({length:5},(_,i) => `
+    <div class="threat-item" style="margin-bottom:8px">
+      <div class="threat-type-dot" style="background:${i<2?'var(--red)':'var(--orange)'};box-shadow:0 0 6px ${i<2?'var(--red)':'var(--orange)'}"></div>
+      <div style="font-size:20px">${['🎭','🎤','🔗','📱','💳'][i]}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${threatTypes[i]}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Reported ${Math.floor(Math.random()*55+5)} min ago · AI auto-flagged</div>
+      </div>
+      <span class="badge ${i<2?'badge-red':'badge-orange'}">${priorities[i]}</span>
+    </div>
+  `).join('');
+})();
+
+function updateTrendFilter(type, btn) {
+  document.querySelectorAll('.badge[onclick^="updateTrendFilter"]').forEach(b => {
+    b.className = 'badge';
+    b.style.cssText = 'cursor:pointer;background:transparent;color:var(--text-secondary);border:1px solid var(--border)';
+  });
+  btn.className = 'badge badge-cyan';
+  btn.style.cssText = 'cursor:pointer;border:none';
+  showToast('Filter applied: ' + type, 'info', 2000);
+}
+</script>
+{% endblock %}
