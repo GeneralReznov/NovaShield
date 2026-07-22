@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Deepfake Detection Service
 REAL AI: TSMEfficientNet (Temporal Shift Module for 3D Video Awareness) + OpenCV heuristics
 """
 
