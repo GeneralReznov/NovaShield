@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Security Middleware
 Sliding window rate limiting and security headers
 """
 
