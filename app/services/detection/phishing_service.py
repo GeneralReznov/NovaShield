@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Advanced Phishing Detection Service
 Multi-factor URL and content analysis with 25+ heuristic rules.
 Designed to be augmented with XGBoost model when trained weights are available.
 """
