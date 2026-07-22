@@ -1,5 +1,4 @@
 """
-KAVACH AI Pro - Custom Exceptions
 Proper error handling with fallback mechanisms
 """
 
