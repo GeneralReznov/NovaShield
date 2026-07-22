@@ -1,5 +1,4 @@
 """
-Temporal Shift Module (TSM) architecture for KAVACH AI 2.0 Deepfake Detection.
 Grants 3D-CNN temporal awareness to 2D-CNNs without extra computational cost.
 """
 
